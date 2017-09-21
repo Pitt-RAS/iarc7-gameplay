@@ -39,11 +39,12 @@ def track_roomba_land():
     roomba_id = roomba_id [0:len(roomba_id)-10]
 
     # Test tracking
-    goal = QuadMoveGoal(movement_type="track_roomba", frame_id = roomba_id, tracking_mode = True)
+    goal = QuadMoveGoal(movement_type="track_roomba", frame_id = roomba_id)
     # Sends the goal to the action server.
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
-    client.wait_for_result()
+    rospy.sleep(10)
+    client.cancel_goal()
     rospy.logwarn("Track Roomba success: {}".format(client.get_result()))
 
 def _receive_roomba_status(data):
