@@ -1,16 +1,20 @@
 #! /usr/bin/env python
 
-import sys
-import rospy
-from iarc7_msgs.msg import OdometryArray
 import actionlib
-import tf2_ros
+import rospy
 import threading
+
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
-from iarc7_safety.SafetyClient import SafetyClient
 
 class RoombaRequest(object):
+    BLOCK = False
+    HIT = True
+
     def __init__(self, frame_id, tracking_mode, time_to_hold_once_done):
+        if (tracking_mode != RoombaRequest.BLOCK
+                and tracking_mode != RoombaRequest.HIT):
+            raise ValueError, \
+                'tracking_mode must be RoombaRequest.BLOCK or RoombaRequest.HIT'
         self.frame_id = frame_id
         self.tracking_mode = tracking_mode
         self.time_to_hold = time_to_hold_once_done
@@ -21,165 +25,192 @@ class RoombaRequestExecuterState(object):
     HIT = 3
     RECOVER_FROM_SUCCESS = 4
     HOLD_POSITION = 5
-    COMPLETED = 6
-    FAILED_TASK = 7
-    FAILED_RECOVERY = 8
-    INVALID_STATE = 9
+    SUCCESS = 6
+    RECOVER_FROM_FAILURE = 7
+    FAILED_TASK = 8
+    FAILED_RECOVERY = 9
+    FAILED_TASK_AND_RECOVERY = 10
+    INVALID_STATE = 11
 
-class RoombaRequestExecuter(object): 
+class InvalidRoombaRequestException(Exception):
+    pass
 
-    def __init__(self, roomba_request, client, status_callback):
+class RoombaRequestExecuter(object):
+    _initialized = False
+    _lock = threading.Lock()
+    _running = False
+
+    def __init__(self):
+        raise NotImplementedError, 'Cannot create instances of this class'
+
+    @classmethod
+    def init(cls, server_name):
         """
-        Roomba Request Executer constructor 
+        Roomba Request Executer constructor
 
         Args:
             roomba_request (RoombaRequest): object with request details from AI
             client (SimpleActionClient): client to send action commands to
-            status_callback: callback funtion to provide status updates to 
+            status_callback: callback funtion to provide status updates to
         """
+        with cls._lock:
+            if cls._initialized:
+                return
 
-        self._status_callback = status_callback
-        self._client = client
-        roomba_id = roomba_request.frame_id
+            # Creates the SimpleActionClient, passing the type of the action
+            # (QuadMoveAction) to the constructor. (Look in the action folder)
+            cls._client = actionlib.SimpleActionClient(
+                server_name,
+                QuadMoveAction)
+
+            # Waits until the action server has started up and started
+            # listening for goals.
+            cls._client.wait_for_server()
+
+            cls._initialized = True
+
+    @classmethod
+    def has_running_task(cls):
+        return cls._running
+
+    @classmethod
+    def run(cls, roomba_request, status_callback=lambda _: None):
+        with cls._lock:
+            if not cls._initialized:
+                raise InvalidRoombaRequestException, 'Called run before init'
+            if cls._running:
+                raise InvalidRoombaRequestException, 'Request already running'
+
+            cls._running = True
+
+            next_thread = threading.Thread(
+                target=cls._run,
+                args=(roomba_request, status_callback))
+            next_thread.start()
+
+    @classmethod
+    def _run(cls, roomba_request, status_callback):
+        """
+        Roomba Request Executer run fucntion
+
+        Description:
+            Fires off tasks until the roomba request is finished, canceled, or
+            fails.
+        """
 
         # removes the "/frame_id" at end of roomba_id
-        self._roomba_id = roomba_id[0:len(roomba_id)-10]
-        self._time_to_hold = roomba_request.time_to_hold
-        
-        # True means HIT roomba, false means BLOCK
-        self._tracking_mode = roomba_request.tracking_mode
+        roomba_id = roomba_request.frame_id.split('/')[0]
 
-        self._is_complete = False
-        self._canceled = False
-        self._end = False
+        time_to_hold = roomba_request.time_to_hold
 
-        self._holding = (self._time_to_hold != 0)
+        tracking_mode = roomba_request.tracking_mode
 
-        self._state = RoombaRequestExecuterState.TRACKING
+        holding = (time_to_hold != 0)
 
-    def _run(self):
-        """
-        Roomba Request Executer run fucntion 
+        state = RoombaRequestExecuterState.TRACKING
 
-        Description: 
-            Fires off tasks until the roomba request is finished, canceled, or fails. 
-        """
-        while (self._state != RoombaRequestExecuterState.COMPLETED 
-            and not rospy.is_shutdown() and not self._end):
+        status_callback(state)
+
+        while not rospy.is_shutdown():
 
             # determining goals
-            if self._canceled:
-                # do something to indicate canceled
-                self._end = True
-
-            elif (self._state == RoombaRequestExecuterState.FAILED_TASK):
-                # recover drone first
-                goal=QuadMoveGoal(movement_type="height_recovery")
-                # Sends the goal to the action server.
-                self._client.send_goal(goal)
-                # Waits for the server to finish performing the action.
-                self._client.wait_for_result()
-
-                if not self._client.get_result():
-                     rospy.logerr("Roomba Controller cannot recover drone height")
-                     self._state = RoombaRequestExecuterState.FAILED_RECOVERY
-                
-                self._end = True
-
-            elif self._state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
+            if (state == RoombaRequestExecuterState.RECOVER_FROM_FAILURE
+                    or state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS):
                 # this is where the height recover task will be called
-                goal=QuadMoveGoal(movement_type="height_recovery")
+                goal = QuadMoveGoal(movement_type="height_recovery")
                 # Sends the goal to the action server.
-                self._client.send_goal(goal)
+                cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
-                self._client.wait_for_result()
-                rospy.logwarn("Recover Height success: {}".format(self._client.get_result()))
+                cls._client.wait_for_result()
+                rospy.logwarn("Recover Height success: {}".format(
+                    cls._client.get_result()))
 
-            elif self._state == RoombaRequestExecuterState.TRACKING:
-                goal=QuadMoveGoal(movement_type="track_roomba", frame_id=self._roomba_id, 
-                                    tracking_mode=self._tracking_mode)
+            elif state == RoombaRequestExecuterState.TRACKING:
+                goal = QuadMoveGoal(movement_type="track_roomba",
+                                    frame_id=roomba_id,
+                                    tracking_mode=tracking_mode)
                 # Sends the goal to the action server.
-                self._client.send_goal(goal)
+                cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
-                self._client.wait_for_result()
-                rospy.logwarn("TrackRoomba success: {}".format(self._client.get_result()))
+                cls._client.wait_for_result()
+                rospy.logwarn("TrackRoomba success: {}".format(
+                    cls._client.get_result()))
 
-            elif self._state == RoombaRequestExecuterState.HIT:
-                goal=QuadMoveGoal(movement_type="hit_roomba", frame_id=self._roomba_id)
+            elif state == RoombaRequestExecuterState.HIT:
+                goal = QuadMoveGoal(movement_type="hit_roomba",
+                                    frame_id=roomba_id)
                 # Sends the goal to the action server.
-                self._client.send_goal(goal)
+                cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
-                self._client.wait_for_result()
-                rospy.logwarn("HITRoomba success: {}".format(self._client.get_result()))
+                cls._client.wait_for_result()
+                rospy.logwarn("HITRoomba success: {}".format(
+                    cls._client.get_result()))
 
-            elif self._state == RoombaRequestExecuterState.BLOCK:
-                goal=QuadMoveGoal(movement_type="block_roomba", frame_id=self._roomba_id)
+            elif state == RoombaRequestExecuterState.BLOCK:
+                goal = QuadMoveGoal(movement_type="block_roomba",
+                                    frame_id=roomba_id)
                 # Sends the goal to the action server.
-                self._client.send_goal(goal)
+                cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
-                self._client.wait_for_result()
-                rospy.logwarn("BlockRoomba success: {}".format(self._client.get_result()))
+                cls._client.wait_for_result()
+                rospy.logwarn("BlockRoomba success: {}".format(
+                    cls._client.get_result()))
 
-            elif self._state == RoombaRequestExecuterState.HOLD_POSITION:
-                goal=QuadMoveGoal(movement_type="hold_position", hold_current_position = True)
+            elif state == RoombaRequestExecuterState.HOLD_POSITION:
+                goal = QuadMoveGoal(movement_type="hold_position",
+                                    hold_current_position=True)
                 # Sends the goal to the action server.
-                self._client.send_goal(goal)
-                # waits to cancel hold task 
-                rospy.sleep(self._time_to_hold)
-                self._client.cancel_goal()
+                cls._client.send_goal(goal)
+                # waits to cancel hold task
+                rospy.sleep(time_to_hold)
+                cls._client.cancel_goal()
                 rospy.logwarn("Hold Position Task canceled")
-                self._state = RoombaRequestExecuterState.COMPLETED
 
-            elif self._state == RoombaRequestExecuterState.COMPLETED:
-                rospy.logwarn("RoombaController was successful")
-
-            else: 
-                rospy.logerr("Roomba Controller is in an invalid state")
-                self._end = True
-                self._state = RoombaRequestExecuterState.INVALID_STATE
-            
             # state transitioning
-            if not self._client.get_result():
-                if self._state == RoombaRequestExecuterState.FAILED_TASK:
-                    self._state == RoombaRequestExecuterState.FAILED_TASK_and_recovery
+            if (state != RoombaRequestExecuterState.HOLD_POSITION
+                    and (not cls._client.get_result()
+                        or not cls._client.get_result().success)):
+                if state == RoombaRequestExecuterState.RECOVER_FROM_FAILURE:
+                    state = RoombaRequestExecuterState.FAILED_TASK_AND_RECOVERY
+                elif state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
+                    state = RoombaRequestExecuterState.FAILED_RECOVERY
                 else:
-                    self._state == RoombaRequestExecuterState.FAILED_TASK
-
+                    state = RoombaRequestExecuterState.RECOVER_FROM_FAILURE
             else:
-                if self._state == RoombaRequestExecuterState.TRACKING:
-                    if self._tracking_mode:
-                        self._state = RoombaRequestExecuterState.HIT
+                if state == RoombaRequestExecuterState.TRACKING:
+                    if tracking_mode == RoombaRequest.HIT:
+                        state = RoombaRequestExecuterState.HIT
                     else:
-                        self._state = RoombaRequestExecuterState.BLOCK
+                        state = RoombaRequestExecuterState.BLOCK
 
-                elif self._state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
-                    if self._holding:
-                        self._state = RoombaRequestExecuterState.HOLD_POSITION
+                elif state == RoombaRequestExecuterState.HIT:
+                    state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
+
+                elif state == RoombaRequestExecuterState.BLOCK:
+                    state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
+
+                elif state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
+                    if holding:
+                        state = RoombaRequestExecuterState.HOLD_POSITION
                     else:
-                        self._state = RoombaRequestExecuterState.COMPLETED
+                        state = RoombaRequestExecuterState.SUCCESS
 
-                elif self._state == RoombaRequestExecuterState.HIT:
-                    self._state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
+                elif state == RoombaRequestExecuterState.RECOVER_FROM_FAILURE:
+                    state = RoombaRequestExecuterState.FAILED_TASK
 
-                elif self._state == RoombaRequestExecuterState.BLOCK:
-                    self._state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
+                elif state == RoombaRequestExecuterState.HOLD_POSITION:
+                    state = RoombaRequestExecuterState.SUCCESS
 
-                elif self._state == RoombaRequestExecuterState.HOLD_POSITION:
-                    self._state == RoombaRequestExecuterState.COMPLETED
-
-                elif self._state == RoombaRequestExecuterState.COMPLETED:
-                    rospy.logwarn("RoombaController was successful")
-
-                else: 
+                else:
                     rospy.logerr("Roomba Controller is in an invalid state")
-                    self._end = True
-                    self._state = RoombaRequestExecuterState.INVALID_STATE
+                    state = RoombaRequestExecuterState.INVALID_STATE
 
-            self._status_callback(self._state)    
+            status_callback(state)
 
-    def start(self):
-        next_thread = threading.Thread(target=self._run)
-        next_thread.setDaemon(True)
-        next_thread.start()
-
-        self._status_callback(self._state)
+            if state in (RoombaRequestExecuterState.SUCCESS,
+                         RoombaRequestExecuterState.INVALID_STATE,
+                         RoombaRequestExecuterState.FAILED_RECOVERY,
+                         RoombaRequestExecuterState.FAILED_TASK,
+                         RoombaRequestExecuterState.FAILED_TASK_AND_RECOVERY):
+                break
+        cls._running = False
