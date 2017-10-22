@@ -39,7 +39,8 @@ def hit_roomba_land():
     roomba_id = roomba_id [0:len(roomba_id)-10]
 
     # Test tracking
-    goal = QuadMoveGoal(movement_type="track_roomba", frame_id = roomba_id, tracking_mode=False)
+    goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id,
+        time_to_track=5.0, x_overshoot=.5, y_overshoot=.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
     # Waits for the server to finish performing the action.

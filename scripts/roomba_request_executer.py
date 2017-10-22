@@ -18,6 +18,7 @@ class RoombaRequest(object):
         self.frame_id = frame_id
         self.tracking_mode = tracking_mode
         self.time_to_hold = time_to_hold_once_done
+        
 
 class RoombaRequestExecuterState(object):
     TRACKING = 1
@@ -107,7 +108,10 @@ class RoombaRequestExecuter(object):
 
         holding = (time_to_hold != 0)
 
-        state = RoombaRequestExecuterState.TRACKING
+        if tracking_mode == RoombaRequest.HIT:
+            state = RoombaRequestExecuterState.HIT
+        else:
+            state = RoombaRequestExecuterState.BLOCK
 
         status_callback(state)
 
@@ -123,17 +127,6 @@ class RoombaRequestExecuter(object):
                 # Waits for the server to finish performing the action.
                 cls._client.wait_for_result()
                 rospy.logwarn("Recover Height success: {}".format(
-                    cls._client.get_result()))
-
-            elif state == RoombaRequestExecuterState.TRACKING:
-                goal = QuadMoveGoal(movement_type="track_roomba",
-                                    frame_id=roomba_id,
-                                    tracking_mode=tracking_mode)
-                # Sends the goal to the action server.
-                cls._client.send_goal(goal)
-                # Waits for the server to finish performing the action.
-                cls._client.wait_for_result()
-                rospy.logwarn("TrackRoomba success: {}".format(
                     cls._client.get_result()))
 
             elif state == RoombaRequestExecuterState.HIT:
@@ -177,13 +170,7 @@ class RoombaRequestExecuter(object):
                 else:
                     state = RoombaRequestExecuterState.RECOVER_FROM_FAILURE
             else:
-                if state == RoombaRequestExecuterState.TRACKING:
-                    if tracking_mode == RoombaRequest.HIT:
-                        state = RoombaRequestExecuterState.HIT
-                    else:
-                        state = RoombaRequestExecuterState.BLOCK
-
-                elif state == RoombaRequestExecuterState.HIT:
+                if state == RoombaRequestExecuterState.HIT:
                     state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
 
                 elif state == RoombaRequestExecuterState.BLOCK:
