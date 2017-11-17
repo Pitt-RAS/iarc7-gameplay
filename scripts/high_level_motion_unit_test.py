@@ -36,7 +36,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    rospy.logwarn("Success: {}".format(client.get_result()))
+    assert(client.get_result().success == False)
 
     rospy.sleep(2.0)
 
@@ -49,12 +49,14 @@ def test():
     rospy.sleep(1.0)
     client.cancel_goal()
 
+    rospy.logwarn("Sending goal while below minimum manuever height")
+
     goal = QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id)
     # Sends the goal to the action server.
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    rospy.logwarn("Success: {}".format(client.get_result()))
+    assert(client.get_result().success == False)
 
     rospy.sleep(2.0)
 
@@ -76,7 +78,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    rospy.logwarn("Success: {}".format(client.get_result()))
+    assert(client.get_result().success == False)
 
     rospy.sleep(2.0)
 
@@ -110,7 +112,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    rospy.logwarn("Success: {}".format(client.get_result()))
+    assert(client.get_result().success == False)
     
     rospy.sleep(2.0)
     
@@ -122,6 +124,17 @@ def test():
     # Waits for the server to finish performing the action.
     client.wait_for_result()
     rospy.logwarn("Height Recovery success: {}".format(client.get_result()))
+
+    rospy.sleep(2.0)
+
+    rospy.logwarn("Sending Test Task")
+
+    goal = QuadMoveGoal(movement_type="test_task", takeoff_height=0.75)
+    # Sends the goal to the action server.
+    client.send_goal(goal)
+    # Waits for the server to finish performing the action.
+    client.wait_for_result()
+    rospy.logwarn("Test Task success: {}".format(client.get_result()))
 
     rospy.sleep(2.0)
 
