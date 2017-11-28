@@ -8,7 +8,7 @@ from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
 
 def test():
-    safety_client = SafetyClient('invalid_task_transition_unit_test')
+    safety_client = SafetyClient('invalid_task_transition_test')
     # Since this abstract is top level in the control chain there is no need to check
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         _roomba_status_sub = rospy.Subscriber('roombas', 
                          OdometryArray, _receive_roomba_status)
 
-        rospy.init_node('invalid_task_transition_unit_test')
+        rospy.init_node('invalid_task_transition_test')
         test()
         rospy.spin()
     except Exception, e:
@@ -168,4 +168,4 @@ if __name__ == '__main__':
         rospy.logfatal(str(e))
         raise
     finally:
-        rospy.signal_shutdown("Invalid Task transition unit test shutdown")
+        rospy.signal_shutdown("Invalid Task transition test shutdown")
