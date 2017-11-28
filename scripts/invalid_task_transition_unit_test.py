@@ -8,11 +8,11 @@ from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
 
 def test():
-    safety_client = SafetyClient('high_level_motion_unit_test')
+    safety_client = SafetyClient('invalid_task_transition_unit_test')
     # Since this abstract is top level in the control chain there is no need to check
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
-    assert(safety_client.form_bond())
+    assert safety_client.form_bond()
 
     # Creates the SimpleActionClient, passing the type of the action
     # (QuadMoveAction) to the constructor. (Look in the action folder)
@@ -24,9 +24,9 @@ def test():
 
     rospy.sleep(2.0)
 
-    # change element in array to test diff roombas
-    roomba_id = roomba_array.data[5].child_frame_id 
-    roomba_id = roomba_id [0:len(roomba_id)-10]
+    # arbitrarily picked fifth roomba to test
+    # also removes the "/frame_id" at end of roomba_id
+    roomba_id = roomba_array.data[5].child_frame_id.split('/')[0]
 
     rospy.logwarn("Testing illegal state #1")
 
@@ -36,7 +36,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    assert(client.get_result().success == False)
+    assert client.get_result().success == False
 
     rospy.sleep(2.0)
 
@@ -56,7 +56,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    assert(client.get_result().success == False)
+    assert client.get_result().success == False
 
     rospy.sleep(2.0)
 
@@ -78,7 +78,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    assert(client.get_result().success == False)
+    assert client.get_result().success == False
 
     rospy.sleep(2.0)
 
@@ -112,7 +112,7 @@ def test():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
-    assert(client.get_result().success == False)
+    assert client.get_result().success == False
     
     rospy.sleep(2.0)
     
@@ -160,14 +160,12 @@ if __name__ == '__main__':
         _roomba_status_sub = rospy.Subscriber('roombas', 
                          OdometryArray, _receive_roomba_status)
 
-        rospy.init_node('high_level_motion_unit_test')
+        rospy.init_node('invalid_task_transition_unit_test')
         test()
-        while not rospy.is_shutdown():
-            pass
-
+        rospy.spin()
     except Exception, e:
         rospy.logfatal("Error in motion planner while running.")
         rospy.logfatal(str(e))
         raise
     finally:
-        rospy.signal_shutdown("HLM unit test abstract shutdown")
+        rospy.signal_shutdown("Invalid Task transition unit test shutdown")
