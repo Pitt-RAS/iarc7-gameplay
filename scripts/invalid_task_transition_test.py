@@ -40,23 +40,14 @@ def test():
 
     rospy.sleep(2.0)
 
-    # Testing below min manuever height
-    rospy.logwarn("Testing illegal state #2")
+    # Testing trying to cancel takeoff
+    rospy.logwarn("Testing illegal state #2, canceling takeoff")
 
     goal = QuadMoveGoal(movement_type="takeoff")
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(1.0)
     client.cancel_goal()
-
-    rospy.logwarn("Sending goal while below minimum manuever height")
-
-    goal = QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    # Waits for the server to finish performing the action.
-    client.wait_for_result()
-    assert client.get_result().success == False
 
     rospy.sleep(2.0)
 
