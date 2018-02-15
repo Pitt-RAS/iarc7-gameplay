@@ -1,18 +1,22 @@
 import actionlib
 import rospy
 import threading
+import math
 
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
+from iarc7_msgs.msg import OdometryArray 
 
 class RoombaRequest(object):
-    BLOCK = False
-    HIT = True
+    BLOCK = 1
+    HIT = 2
+    BUMP = 3
 
     def __init__(self, frame_id, tracking_mode, time_to_hold_once_done):
         if (tracking_mode != RoombaRequest.BLOCK
-                and tracking_mode != RoombaRequest.HIT):
-            raise ValueError, \
-                'tracking_mode must be RoombaRequest.BLOCK or RoombaRequest.HIT'
+                and tracking_mode != RoombaRequest.HIT
+                and tracking_mode != RoombaRequest.BUMP):
+            raise (ValueError, 
+                'tracking_mode must be RoombaRequest.BLOCK or RoombaRequest.HIT or RoombaRequest.BUMP')
         self.frame_id = frame_id
         self.tracking_mode = tracking_mode
         self.time_to_hold = time_to_hold_once_done
@@ -22,14 +26,15 @@ class RoombaRequestExecuterState(object):
     TRACKING = 1
     BLOCK = 2
     HIT = 3
-    RECOVER_FROM_SUCCESS = 4
-    HOLD_POSITION = 5
-    SUCCESS = 6
-    RECOVER_FROM_FAILURE = 7
-    FAILED_TASK = 8
-    FAILED_RECOVERY = 9
-    FAILED_TASK_AND_RECOVERY = 10
-    INVALID_STATE = 11
+    BUMP = 4
+    RECOVER_FROM_SUCCESS = 5
+    HOLD_POSITION = 6
+    SUCCESS = 7
+    RECOVER_FROM_FAILURE = 8
+    FAILED_TASK = 9
+    FAILED_RECOVERY = 10
+    FAILED_TASK_AND_RECOVERY = 11
+    INVALID_STATE = 12
 
 class InvalidRoombaRequestException(Exception):
     pass
@@ -68,11 +73,41 @@ class RoombaRequestExecuter(object):
             if rospy.is_shutdown():
                 raise rospy.ROSInterruptException()
 
+            cls._roombas = None
+            cls._roomba_id = None
+            cls._last_roomba_vel = None
+            cls._rommba_rotating = False
+
+            cls._roomba_status_sub = rospy.Subscriber(
+            'roombas', OdometryArray, 
+            cls._roomba_callback)
+
             cls._initialized = True
 
     @classmethod
     def has_running_task(cls):
         return cls._running
+
+    @classmethod
+    def _roomba_callback(cls, data): 
+        cls._roombas = data
+
+        if cls._roomba_id is not None: 
+            if cls._last_roomba_vel is None:
+                for odometry in data.data:
+                    if odometry.child_frame_id == cls._roomba_id:
+                        roomba_x_velocity = odometry.twist.twist.linear.x
+                        roomba_y_velocity = odometry.twist.twist.linear.y
+                        cls._last_roomba_vel = math.sqrt(roomba_x_velocity**2 + roomba_y_velocity**2)
+            else: 
+                for odometry in data.data:
+                    if odometry.child_frame_id == cls._roomba_id:
+                        roomba_x_velocity = odometry.twist.twist.linear.x
+                        roomba_y_velocity = odometry.twist.twist.linear.y
+                        current_roomba_vel = math.sqrt(roomba_x_velocity**2 + roomba_y_velocity**2)
+
+                cls._rommba_rotating = (abs(current_roomba_vel - cls._last_roomba_vel)>.15
+                    or current_roomba_vel <= .15)
 
     @classmethod
     def run(cls, roomba_request, status_callback=lambda _: None):
@@ -82,6 +117,9 @@ class RoombaRequestExecuter(object):
             if cls._running:
                 raise InvalidRoombaRequestException, 'Request already running'
 
+            cls._last_roomba_vel = None
+            cls._rommba_rotating = False
+            cls._roomba_id = roomba_request.frame_id
             cls._running = True
 
             next_thread = threading.Thread(
@@ -110,12 +148,16 @@ class RoombaRequestExecuter(object):
 
         if tracking_mode == RoombaRequest.HIT:
             state = RoombaRequestExecuterState.HIT
-        else:
+        elif tracking_mode == RoombaRequest.BUMP:
+            state = RoombaRequestExecuterState.BUMP
+        else: 
             state = RoombaRequestExecuterState.BLOCK
 
         status_callback(state)
 
         while not rospy.is_shutdown():
+
+            tracking = False
 
             # determining goals
             if (state == RoombaRequestExecuterState.RECOVER_FROM_FAILURE
@@ -165,6 +207,19 @@ class RoombaRequestExecuter(object):
                 cls._client.cancel_goal()
                 rospy.logwarn("Hold Position Task canceled")
 
+            elif state == RoombaRequestExecuterState.BUMP:
+                if not tracking: 
+                    goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id, 
+                                        x_overshoot=-.25, y_overshoot=-.25)
+                    # Sends the goal to the action server.
+                    cls._client.send_goal(goal)
+                    tracking = True
+
+                if cls._rommba_rotating: 
+                    cls._client.cancel_goal()
+                    state = RoombaRequestExecuterState.BLOCK
+
+
             # state transitioning
             if (state != RoombaRequestExecuterState.HOLD_POSITION
                     and (not cls._client.get_result()
@@ -181,6 +236,9 @@ class RoombaRequestExecuter(object):
 
                 elif state == RoombaRequestExecuterState.BLOCK:
                     state = RoombaRequestExecuterState.RECOVER_FROM_SUCCESS
+
+                elif state == RoombaRequestExecuterState.BUMP: 
+                    pass
 
                 elif state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
                     if holding:
@@ -207,3 +265,4 @@ class RoombaRequestExecuter(object):
                          RoombaRequestExecuterState.FAILED_TASK_AND_RECOVERY):
                 break
         cls._running = False
+        cls._roomba_id = None

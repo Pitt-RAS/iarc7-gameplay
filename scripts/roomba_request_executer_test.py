@@ -42,11 +42,11 @@ def hit_roomba():
         rospy.sleep(2)
 
     # change element in array to test diff roombas
-    roomba_id = roomba_array.data[5].child_frame_id
+    roomba_id = roomba_array.data[4].child_frame_id
 
     RoombaRequestExecuter.init('motion_planner_server')
 
-    roomba_request = RoombaRequest(roomba_id, RoombaRequest.HIT, 5)
+    roomba_request = RoombaRequest(roomba_id, RoombaRequest.BUMP, 5)
 
     RoombaRequestExecuter.run(roomba_request, _receive_roomba_executer_status)
 
