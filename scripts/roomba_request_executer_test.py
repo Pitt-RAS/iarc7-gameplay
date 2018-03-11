@@ -1,11 +1,10 @@
 #! /usr/bin/env python
-
 import rospy
 from iarc7_msgs.msg import OdometryArray
 import actionlib
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
-from roomba_request_executer import (RoombaRequestExecuter,
+from iarc7_abstract.roomba_request_executer import (RoombaRequestExecuter,
                                      RoombaRequest,
                                      RoombaRequestExecuterState)
 
@@ -70,7 +69,6 @@ def _receive_roomba_executer_status(data):
 
 if __name__ == '__main__':
     executer_state = None
-
     roomba_array = None
     # Initializes a rospy node so that the SimpleActionClient can
     # publish and subscribe over ROS.
