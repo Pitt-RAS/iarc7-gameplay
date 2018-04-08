@@ -8,7 +8,7 @@ from iarc7_abstract.roomba_request_executer import (RoombaRequestExecuter,
                                      RoombaRequest,
                                      RoombaRequestExecuterState)
 
-def hit_roomba():
+def test_rre():
     safety_client = SafetyClient('roomba_request_executer_test_abstract')
     # Since this abstract is top level in the control chain there is no need to
     # check for a safety state. We can also get away with not checking for a
@@ -41,7 +41,7 @@ def hit_roomba():
         rospy.sleep(2)
 
     # change element in array to test diff roombas
-    roomba_id = roomba_array.data[4].child_frame_id
+    roomba_id = roomba_array.data[-1].child_frame_id
 
     RoombaRequestExecuter.init('motion_planner_server')
 
@@ -76,5 +76,5 @@ if __name__ == '__main__':
     _roomba_status_sub = rospy.Subscriber('roombas',
                      OdometryArray, _receive_roomba_status)
 
-    hit_roomba()
+    test_rre()
     rospy.spin()
