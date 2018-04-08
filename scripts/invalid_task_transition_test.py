@@ -84,6 +84,16 @@ def test():
 
     rospy.sleep(2.0)
 
+    rospy.logwarn("Testing invalid RoombaID")
+    
+    goal = QuadMoveGoal(movement_type="track_roomba", 
+        time_to_track=5.0, x_overshoot=.5, y_overshoot=.5)
+    # Sends the goal to the action server.
+    client.send_goal(goal)
+    # Waits for the server to finish performing the action.
+    client.wait_for_result()
+    assert client.get_result().success == False
+
     rospy.logwarn("Preparing to test illegal state #4")
 
     goal = QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id)
