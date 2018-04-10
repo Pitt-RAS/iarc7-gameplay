@@ -32,7 +32,7 @@ def takeoff_land():
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
     rospy.logwarn("Begin hovering")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(10.0)
@@ -41,7 +41,7 @@ def takeoff_land():
 
 
     rospy.logwarn("Ascending")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.3)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.0)
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(10.0)
@@ -50,7 +50,7 @@ def takeoff_land():
 
 
     rospy.logwarn("Descending")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(10.0)
