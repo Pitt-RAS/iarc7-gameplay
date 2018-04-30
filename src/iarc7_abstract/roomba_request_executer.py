@@ -262,7 +262,7 @@ class RoombaRequestExecuter(object):
                     if cls._roomba_turned:
                         state = RoombaRequestExecuterState.BLOCK
 
-                # successfully recovered, so do we hold now
+                # successfully recovered, so hold now, if requested
                 elif state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS:
                     if holding:
                         state = RoombaRequestExecuterState.HOLD_POSITION
