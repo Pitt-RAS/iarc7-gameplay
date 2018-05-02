@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 import sys
 import rospy
-
+from iarc7_msgs.msg import OdometryArray
 import actionlib
+import tf2_ros
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
 
-def takeoff_land():
-    safety_client = SafetyClient('takeoff_land_abstract')
+def velocity_test():
+    safety_client = SafetyClient('joystick_velocity_test_abstract')
     # Since this abstract is top level in the control chain there is no need to check
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
@@ -21,7 +22,7 @@ def takeoff_land():
     # listening for goals.
     client.wait_for_server()
 
-    rospy.sleep(5.0)
+    rospy.sleep(2.0)
 
     # Test takeoff
     goal = QuadMoveGoal(movement_type="takeoff")
@@ -31,33 +32,12 @@ def takeoff_land():
     client.wait_for_result()
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
-    rospy.logwarn("Begin hovering")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
+    goal = QuadMoveGoal(movement_type="joystick_velocity_task")
     # Sends the goal to the action server.
     client.send_goal(goal)
-    rospy.sleep(10.0)
-    client.cancel_goal()
-    rospy.logwarn("Done hovering")
+    client.wait_for_result()
+    rospy.logwarn("joystick_velocity_task finished")
 
-
-    rospy.logwarn("Ascending")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.0)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(10.0)
-    client.cancel_goal()
-    rospy.logwarn("Done asending")
-
-
-    rospy.logwarn("Descending")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(10.0)
-    client.cancel_goal()
-    rospy.logwarn("Done descending")
-
-# Test land
     goal = QuadMoveGoal(movement_type="land")
     # Sends the goal to the action server.
     client.send_goal(goal)
@@ -67,16 +47,13 @@ def takeoff_land():
 
 if __name__ == '__main__':
     try:
-        # Initializes a rospy node so that the SimpleActionClient can
-        # publish and subscribe over ROS.
-        rospy.init_node('takeoff_land_abstract')
-        takeoff_land()
-        while not rospy.is_shutdown():
-            pass
+        rospy.init_node('joystick_velocity_test_abstract')
+        velocity_test()
+        rospy.spin()
 
     except Exception, e:
-        rospy.logfatal("Error in motion planner while running.")
+        rospy.logfatal("Error in joystick_velocity_test_abstract while running.")
         rospy.logfatal(str(e))
         raise
     finally:
-        rospy.signal_shutdown("Takeoff and land abstract shutdown")
+        rospy.signal_shutdown("joystick_velocity_test_abstract shutdown")
