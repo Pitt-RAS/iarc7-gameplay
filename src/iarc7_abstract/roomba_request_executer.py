@@ -97,8 +97,8 @@ class RoombaRequestExecuter(object):
                 server_name,
                 QuadMoveAction)
 
-            # roomba_sub = rospy.Subscriber('roomba_states',
-            #             RoombaStateStampedArray, cls._roomba_state_callback)
+            roomba_sub = rospy.Subscriber('roomba_full_states', 
+                         RoombaStateStampedArray, cls._roomba_state_callback)
 
             # Waits until the action server has started up and started
             # listening for goals.
@@ -107,8 +107,8 @@ class RoombaRequestExecuter(object):
                 raise rospy.ROSInterruptException()
 
             cls._initialized = True
-            cls._roomba_msg = None
-            cls._roomba_turned = False
+            cls._roomba_turning = False
+            cls._roomba_id = None
 
     @classmethod
     def has_running_task(cls):
@@ -132,7 +132,9 @@ class RoombaRequestExecuter(object):
     @classmethod
     def _roomba_state_callback(cls, msg):
         with cls._lock:
-            cls._roomba_msg = msg
+            for roomba in msg.roombas: 
+                if roomba.roomba_id.split('/')[0] == cls._roomba_id: 
+                    cls._roomba_turning = roomba.turning
 
     @classmethod
     def _run(cls, roomba_request, status_callback):
@@ -145,7 +147,9 @@ class RoombaRequestExecuter(object):
         """
 
         # removes the "/base_link" at end of roomba_id
-        roomba_id = roomba_request.frame_id.split('/')[0]
+        cls._roomba_id = roomba_request.frame_id.split('/')[0]
+
+        cls._roomba_turning = False
 
         time_to_hold = roomba_request.time_to_hold
         tracking_mode = roomba_request.tracking_mode
@@ -174,8 +178,7 @@ class RoombaRequestExecuter(object):
 
             elif state == RoombaRequestExecuterState.GOING_TO:
                 goal = QuadMoveGoal(movement_type="go_to_roomba",
-                                    frame_id=roomba_id,
-                                    ending_radius=.5)
+                                    frame_id=cls._roomba_id)
                 # Sends the goal to the action server.
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
@@ -186,7 +189,7 @@ class RoombaRequestExecuter(object):
             elif state == RoombaRequestExecuterState.FOLLOWING:
                 if not track_sent:
                     goal = QuadMoveGoal(movement_type="track_roomba",
-                                        frame_id=roomba_id,
+                                        frame_id=cls._roomba_id,
                                         x_overshoot=-.25,
                                         y_overshoot=-.25)
                     # Sends the goal to the action server.
@@ -194,7 +197,7 @@ class RoombaRequestExecuter(object):
                     rospy.logwarn("Following Roomba")
                     track_sent = True
 
-                if cls._roomba_turned:
+                if cls._roomba_turning:
                     cls._client.cancel_goal()
 
                 # rate limiting
@@ -202,7 +205,7 @@ class RoombaRequestExecuter(object):
 
             elif state == RoombaRequestExecuterState.HIT:
                 goal = QuadMoveGoal(movement_type="hit_roomba",
-                                    frame_id=roomba_id)
+                                    frame_id=cls._roomba_id)
                 # Sends the goal to the action server.
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
@@ -214,7 +217,7 @@ class RoombaRequestExecuter(object):
 
             elif state == RoombaRequestExecuterState.BLOCK:
                 goal = QuadMoveGoal(movement_type="block_roomba",
-                                    frame_id=roomba_id)
+                                    frame_id=cls._roomba_id)
                 # Sends the goal to the action server.
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
@@ -259,7 +262,7 @@ class RoombaRequestExecuter(object):
 
                 # bump roomba logic
                 elif state == RoombaRequestExecuterState.FOLLOWING:
-                    if cls._roomba_turned:
+                    if cls._roomba_turning:
                         state = RoombaRequestExecuterState.BLOCK
 
                 # successfully recovered, so hold now, if requested
