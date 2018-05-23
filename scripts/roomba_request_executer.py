@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 import actionlib
 import rospy
 import threading
@@ -67,6 +65,8 @@ class RoombaRequestExecuter(object):
             # Waits until the action server has started up and started
             # listening for goals.
             cls._client.wait_for_server()
+            if rospy.is_shutdown():
+                raise rospy.ROSInterruptException()
 
             cls._initialized = True
 
@@ -126,6 +126,8 @@ class RoombaRequestExecuter(object):
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
                 cls._client.wait_for_result()
+                if rospy.is_shutdown():
+                    raise rospy.ROSInterruptException()
                 rospy.logwarn("Recover Height success: {}".format(
                     cls._client.get_result()))
 
@@ -136,6 +138,8 @@ class RoombaRequestExecuter(object):
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
                 cls._client.wait_for_result()
+                if rospy.is_shutdown():
+                    raise rospy.ROSInterruptException()
                 rospy.logwarn("HITRoomba success: {}".format(
                     cls._client.get_result()))
 
@@ -146,6 +150,8 @@ class RoombaRequestExecuter(object):
                 cls._client.send_goal(goal)
                 # Waits for the server to finish performing the action.
                 cls._client.wait_for_result()
+                if rospy.is_shutdown():
+                    raise rospy.ROSInterruptException()
                 rospy.logwarn("BlockRoomba success: {}".format(
                     cls._client.get_result()))
 

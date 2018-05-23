@@ -12,6 +12,7 @@ def takeoff_land():
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
     assert(safety_client.form_bond())
+    if rospy.is_shutdown(): return
 
     # Creates the SimpleActionClient, passing the type of the action
     # (QuadMoveAction) to the constructor. (Look in the action folder)
@@ -20,6 +21,7 @@ def takeoff_land():
     # Waits until the action server has started up and started
     # listening for goals.
     client.wait_for_server()
+    if rospy.is_shutdown(): return
 
     rospy.sleep(5.0)
 
@@ -29,6 +31,7 @@ def takeoff_land():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
+    if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
     rospy.logwarn("Begin hovering")
@@ -63,20 +66,12 @@ def takeoff_land():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
+    if rospy.is_shutdown(): return
     rospy.logwarn("Land success: {}".format(client.get_result()))
 
 if __name__ == '__main__':
-    try:
-        # Initializes a rospy node so that the SimpleActionClient can
-        # publish and subscribe over ROS.
-        rospy.init_node('takeoff_land_abstract')
-        takeoff_land()
-        while not rospy.is_shutdown():
-            pass
-
-    except Exception, e:
-        rospy.logfatal("Error in motion planner while running.")
-        rospy.logfatal(str(e))
-        raise
-    finally:
-        rospy.signal_shutdown("Takeoff and land abstract shutdown")
+    # Initializes a rospy node so that the SimpleActionClient can
+    # publish and subscribe over ROS.
+    rospy.init_node('takeoff_land_abstract')
+    takeoff_land()
+    rospy.spin()

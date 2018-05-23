@@ -13,6 +13,7 @@ def track_roomba_land():
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
     assert(safety_client.form_bond())
+    if rospy.is_shutdown(): return
 
     # Creates the SimpleActionClient, passing the type of the action
     # (QuadMoveAction) to the constructor. (Look in the action folder)
@@ -21,6 +22,7 @@ def track_roomba_land():
     # Waits until the action server has started up and started
     # listening for goals.
     client.wait_for_server()
+    if rospy.is_shutdown(): return
 
     rospy.sleep(2.0)
 
@@ -30,6 +32,7 @@ def track_roomba_land():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
+    if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
     rospy.sleep(2.0)
@@ -45,6 +48,7 @@ def track_roomba_land():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
+    if rospy.is_shutdown(): return
     rospy.logwarn("Track Roomba success: {}".format(client.get_result()))
 
 def _receive_roomba_status(data):
@@ -52,21 +56,11 @@ def _receive_roomba_status(data):
     roomba_array = data
 
 if __name__ == '__main__':
-    try:
-        roomba_array = []
-        # Initializes a rospy node so that the SimpleActionClient can
-        # publish and subscribe over ROS.
-        _roomba_status_sub = rospy.Subscriber('roombas', 
-                         OdometryArray, _receive_roomba_status)
-
-        rospy.init_node('track_roomba_abstract')
-        track_roomba_land()
-        while not rospy.is_shutdown():
-            pass
-
-    except Exception, e:
-        rospy.logfatal("Error in motion planner while running.")
-        rospy.logfatal(str(e))
-        raise
-    finally:
-        rospy.signal_shutdown("Takeoff and Track Roomba abstract shutdown")
+    roomba_array = []
+    # Initializes a rospy node so that the SimpleActionClient can
+    # publish and subscribe over ROS.
+    rospy.init_node('track_roomba_abstract')
+    _roomba_status_sub = rospy.Subscriber('roombas',
+                     OdometryArray, _receive_roomba_status)
+    track_roomba_land()
+    rospy.spin()
