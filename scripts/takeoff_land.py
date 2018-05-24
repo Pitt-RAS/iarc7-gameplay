@@ -25,50 +25,54 @@ def takeoff_land():
 
     rospy.sleep(5.0)
 
-    # Test takeoff
-    goal = QuadMoveGoal(movement_type="takeoff")
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    # Waits for the server to finish performing the action.
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Takeoff success: {}".format(client.get_result()))
-
-    rospy.logwarn("Begin hovering")
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(10.0)
-    client.cancel_goal()
-    rospy.logwarn("Done hovering")
-
-    for i in range(0, 10):
-
-        rospy.logwarn("Ascending")
-        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.0)
+    for i in range(0, 2):
+        # Test takeoff
+        goal = QuadMoveGoal(movement_type="takeoff")
         # Sends the goal to the action server.
         client.send_goal(goal)
-        rospy.sleep(4.0)
-        client.cancel_goal()
-        rospy.logwarn("Done asending")
+        # Waits for the server to finish performing the action.
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Takeoff success: {}".format(client.get_result()))
+
+        #rospy.logwarn("Begin hovering")
+        #goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
+        # Sends the goal to the action server.
+        #client.send_goal(goal)
+        #rospy.sleep(10.0)
+        #client.cancel_goal()
+        #if rospy.is_shutdown(): return
+        #rospy.logwarn("Done hovering")
+
+        for i in range(0, 1):
+
+            rospy.logwarn("Ascending")
+            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.0)
+            # Sends the goal to the action server.
+            client.send_goal(goal)
+            rospy.sleep(3.0)
+            client.cancel_goal()
+            if rospy.is_shutdown(): return
+            rospy.logwarn("Done asending")
 
 
-        rospy.logwarn("Descending")
-        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.4)
+            rospy.logwarn("Descending")
+            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+            # Sends the goal to the action server.
+            client.send_goal(goal)
+            rospy.sleep(3.0)
+            client.cancel_goal()
+            if rospy.is_shutdown(): return
+            rospy.logwarn("Done descending")
+
+        # Test land
+        goal = QuadMoveGoal(movement_type="land")
         # Sends the goal to the action server.
         client.send_goal(goal)
-        rospy.sleep(4.0)
-        client.cancel_goal()
-        rospy.logwarn("Done descending")
-
-# Test land
-    goal = QuadMoveGoal(movement_type="land")
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    # Waits for the server to finish performing the action.
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Land success: {}".format(client.get_result()))
+        # Waits for the server to finish performing the action.
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Land success: {}".format(client.get_result()))
 
 if __name__ == '__main__':
     # Initializes a rospy node so that the SimpleActionClient can
