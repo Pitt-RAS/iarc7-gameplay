@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import sys
+import math
 import rospy
 from iarc7_msgs.msg import OdometryArray
 from iarc7_msgs.msg import RoombaDetectionFrame
@@ -55,7 +56,7 @@ def track_roomba_land():
         if rospy.Time.now() - search_start_time > rospy.Duration(3.0):
             rospy.loginfo("Searching for Roomba timed out")
             break
-        elif len(roomba_detections_array) > 0:
+        elif len(roomba_array.data) > 0:
             roomba_detected = True
             rospy.loginfo("FOUND ROOMBA")
             break
@@ -67,33 +68,57 @@ def track_roomba_land():
     if roomba_detected:
         # change element in array to test diff roombas
         roomba_id = roomba_array.data[0].child_frame_id 
-        roomba_id = roomba_id [0:len(roomba_id)-10]
 
         # Test tracking
         goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id, 
-            time_to_track=10.0, x_overshoot=0.0, y_overshoot=0.0)
+            time_to_track=6.0, x_overshoot=0.0, y_overshoot=0.0)
         # Sends the goal to the action server.
         client.send_goal(goal)
         # Waits for the server to finish performing the action.
         client.wait_for_result()
+
+        # We assume the roomba has been well tracked at this point and head out
+        rospy.logerr(roomba_array)
+        x = roomba_array.data[0].twist.twist.linear.x
+        y = roomba_array.data[0].twist.twist.linear.y
+        norm = math.sqrt(x**2 + y**2)
+        x_n = x / norm
+        y_n = y / norm
+
+        GO_AHEAD_VELOCITY = 1.0
+        x_target = GO_AHEAD_VELOCITY * x_n
+        y_target = GO_AHEAD_VELOCITY * y_n
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=x_target, y_velocity=y_target, z_position=1.5)
+        client.send_goal(goal)
+        rospy.sleep(2.0)
+        client.cancel_goal()
+
         rospy.logwarn("Track Roomba success: {}".format(client.get_result()))
+
+        goal = QuadMoveGoal(movement_type="land")
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        # Waits for the server to finish performing the action.
+        client.wait_for_result()
+        rospy.logwarn("Land success: {}".format(client.get_result()))
+
     else:
         rospy.logerr("Roomba not found while searching, returning")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=-0.5, y_velocity=0.0, z_position=1.5)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(3.0)
-    client.cancel_goal()
-    rospy.logwarn("Translation to roomba canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=-0.5, y_velocity=0.0, z_position=1.5)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(3.0)
+        client.cancel_goal()
+        rospy.logwarn("Translation to roomba canceled")
 
-    goal = QuadMoveGoal(movement_type="land")
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    # Waits for the server to finish performing the action.
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Land success: {}".format(client.get_result()))
+        goal = QuadMoveGoal(movement_type="land")
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        # Waits for the server to finish performing the action.
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Land success: {}".format(client.get_result()))
 
 def _receive_roomba_status(data):
     global roomba_array
