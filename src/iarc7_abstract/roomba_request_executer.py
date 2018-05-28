@@ -240,7 +240,10 @@ class RoombaRequestExecuter(object):
             """state transitioning"""
 
             # see http://docs.ros.org/api/actionlib_msgs/html/msg/GoalStatus.html
-            # for status IDs
+            # for all status IDs
+            # 4: ABORTED
+            # 5: REJECTED
+            # 9: LOST
             if cls._client.get_state() not in [4,5,9]:
                 # the task was successful
 
