@@ -27,8 +27,7 @@ def test():
     rospy.sleep(2.0)
 
     # arbitrarily picked fifth roomba to test
-    # also removes the "/frame_id" at end of roomba_id
-    roomba_id = roomba_array.data[5].child_frame_id.split('/')[0]
+    roomba_id = roomba_array.data[5].child_frame_id
 
     rospy.logwarn("Testing illegal state #1")
 

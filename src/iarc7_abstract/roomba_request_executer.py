@@ -133,7 +133,7 @@ class RoombaRequestExecuter(object):
     def _roomba_state_callback(cls, msg):
         with cls._lock:
             for roomba in msg.roombas: 
-                if roomba.roomba_id.split('/')[0] == cls._roomba_id: 
+                if roomba.roomba_id == cls._roomba_id: 
                     cls._roomba_turning = roomba.turning
 
     @classmethod
@@ -145,9 +145,7 @@ class RoombaRequestExecuter(object):
             Fires off tasks until the roomba request is finished, canceled, or
             fails.
         """
-
-        # removes the "/base_link" at end of roomba_id
-        cls._roomba_id = roomba_request.frame_id.split('/')[0]
+        cls._roomba_id = roomba_request.frame_id
 
         cls._roomba_turning = False
 

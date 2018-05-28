@@ -41,7 +41,6 @@ def go_to_roomba_land():
 
     # change element in array to test diff roombas
     roomba_id = roomba_array.data[3].child_frame_id 
-    roomba_id = roomba_id [0:len(roomba_id)-10]
 
     # Test going to a roomba
     goal = QuadMoveGoal(movement_type="go_to_roomba", frame_id=roomba_id, ending_radius=.25)

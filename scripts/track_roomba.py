@@ -43,10 +43,13 @@ def track_roomba_land():
     goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
-
     rospy.sleep(2.0)
+    
     client.cancel_goal()
-    rospy.logwarn("Dont ascending")
+    rospy.logwarn("Done ascending")
+
+    # change element in array to test diff roombas
+    roomba_id = roomba_array.data[3].child_frame_id 
 
     goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=1.0, y_velocity=0.0, z_position=1.5)
     # Sends the goal to the action server.
