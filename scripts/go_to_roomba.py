@@ -43,7 +43,7 @@ def go_to_roomba_land():
     roomba_id = roomba_array.data[3].child_frame_id 
 
     # Test going to a roomba
-    goal = QuadMoveGoal(movement_type="go_to_roomba", frame_id=roomba_id, ending_radius=.25)
+    goal = QuadMoveGoal(movement_type="go_to_roomba", frame_id=roomba_id)
     # Sends the goal to the action server.
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
