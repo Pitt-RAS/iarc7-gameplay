@@ -1,4 +1,5 @@
 import actionlib
+from enum import Enum
 import rospy
 import threading
 
@@ -41,7 +42,7 @@ class RoombaRequest(object):
 RRE State: Class used by RRE to keep track of its internal state and 
 to provide feedback to the user of the RRE
 """
-class RoombaRequestExecuterState(object):
+class RoombaRequestExecuterState(Enum):
     FOLLOWING = 1
     GOING_TO = 2
     BLOCK = 3

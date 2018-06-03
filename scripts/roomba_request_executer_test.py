@@ -50,7 +50,7 @@ def test_rre():
     RoombaRequestExecuter.run(roomba_request, _receive_roomba_executer_status)
 
     while RoombaRequestExecuter.has_running_task():
-        rospy.logwarn(str(executer_state))
+        rospy.logwarn('Current Roomba Request Executer state: ' + executer_state.name)
         rospy.sleep(2)
 
     if executer_state == RoombaRequestExecuterState.SUCCESS:
@@ -65,7 +65,7 @@ def _receive_roomba_status(data):
 def _receive_roomba_executer_status(data):
     global executer_state
     executer_state = data
-    rospy.logerr('state: ' + str(executer_state))
+    rospy.logerr('Updated state: ' + executer_state.name)
 
 if __name__ == '__main__':
     executer_state = None
