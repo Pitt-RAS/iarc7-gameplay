@@ -15,6 +15,7 @@ def hit_roomba():
     # check for a safety state. We can also get away with not checking for a
     # fatal state since all nodes below will shut down.
     assert(safety_client.form_bond())
+    if rospy.is_shutdown(): return
 
     # Creates the SimpleActionClient, passing the type of the action
     # (QuadMoveAction) to the constructor. (Look in the action folder)
@@ -24,6 +25,7 @@ def hit_roomba():
     # Waits until the action server has started up and started
     # listening for goals.
     client.wait_for_server()
+    if rospy.is_shutdown(): return
     rospy.sleep(2.0)
 
     # Test takeoff
@@ -32,6 +34,7 @@ def hit_roomba():
     client.send_goal(goal)
     # Waits for the server to finish performing the action.
     client.wait_for_result()
+    if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
     rospy.sleep(2.0)
 
@@ -67,20 +70,13 @@ def _receive_roomba_executer_status(data):
 
 if __name__ == '__main__':
     executer_state = None
-    try:
-        roomba_array = None
-        # Initializes a rospy node so that the SimpleActionClient can
-        # publish and subscribe over ROS.
-        _roomba_status_sub = rospy.Subscriber('roombas',
-                         OdometryArray, _receive_roomba_status)
 
-        rospy.init_node('roomba_request_executer_test_abstract')
-        hit_roomba()
-        rospy.spin()
+    roomba_array = None
+    # Initializes a rospy node so that the SimpleActionClient can
+    # publish and subscribe over ROS.
+    rospy.init_node('roomba_request_executer_test_abstract')
+    _roomba_status_sub = rospy.Subscriber('roombas',
+                     OdometryArray, _receive_roomba_status)
 
-    except Exception, e:
-        rospy.logfatal("Error in motion planner while running.")
-        rospy.logfatal(str(e))
-        raise
-    finally:
-        rospy.signal_shutdown("Roomba controller test abstract shutdown")
+    hit_roomba()
+    rospy.spin()
