@@ -199,9 +199,6 @@ class RoombaRequestExecuter(object):
                 if cls._roomba_turning:
                     cls._client.cancel_goal()
 
-                # rate limiting
-                rospy.sleep(.05)
-
             elif state == RoombaRequestExecuterState.HIT:
                 goal = QuadMoveGoal(movement_type="hit_roomba",
                                     frame_id=cls._roomba_id)

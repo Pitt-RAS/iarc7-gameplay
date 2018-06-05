@@ -65,7 +65,7 @@ def _receive_roomba_status(data):
 def _receive_roomba_executer_status(data):
     global executer_state
     executer_state = data
-    rospy.logerr('Updated state: ' + executer_state.name)
+    rospy.logerr_throttle(60, 'Updated state: ' + executer_state.name)
 
 if __name__ == '__main__':
     executer_state = None
