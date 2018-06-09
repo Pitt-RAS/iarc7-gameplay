@@ -132,11 +132,6 @@ def _receive_roomba_detections(data):
     global roomba_detections_array
     roomba_detections_array = data.roombas
 
-def _receive_start_button(data):
-    global start_button_pressed
-    start_button_pressed = data.data
-start_button_pressed = False
-
 if __name__ == '__main__':
     roomba_array = []
     # Initializes a rospy node so that the SimpleActionClient can
