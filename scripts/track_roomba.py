@@ -4,10 +4,12 @@ import math
 import rospy
 from iarc7_msgs.msg import OdometryArray
 from iarc7_msgs.msg import RoombaDetectionFrame
+from std_msgs.msg import Bool
 import actionlib
 import tf2_ros
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
+from control_button_interpreter import ControlButtonInterpreter
 
 def track_roomba_land():
     safety_client = SafetyClient('track_roomba_abstract')
@@ -26,12 +28,13 @@ def track_roomba_land():
     client.wait_for_server()
     if rospy.is_shutdown(): return
 
-    rospy.sleep(2.0)
+    control_buttons.wait_for_start()
 
     # Test takeoff
     goal = QuadMoveGoal(movement_type="takeoff")
     # Sends the goal to the action server.
     client.send_goal(goal)
+    rospy.loginfo('Sent takeoff request')
     # Waits for the server to finish performing the action.
     client.wait_for_result()
     if rospy.is_shutdown(): return
@@ -129,6 +132,11 @@ def _receive_roomba_detections(data):
     global roomba_detections_array
     roomba_detections_array = data.roombas
 
+def _receive_start_button(data):
+    global start_button_pressed
+    start_button_pressed = data.data
+start_button_pressed = False
+
 if __name__ == '__main__':
     roomba_array = []
     # Initializes a rospy node so that the SimpleActionClient can
@@ -139,5 +147,8 @@ if __name__ == '__main__':
     _roomba_vision_sub = rospy.Subscriber('detected_roombas',
                                           RoombaDetectionFrame,
                                           _receive_roomba_detections)
+
+    control_buttons = ControlButtonInterpreter()
+
     track_roomba_land()
     rospy.spin()
