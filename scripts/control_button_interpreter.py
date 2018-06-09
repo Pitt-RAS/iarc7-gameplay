@@ -22,8 +22,11 @@ class ControlButtonInterpreter(object):
 
     def wait_for_start(self):
         if self._control_buttons_active:
-            rate = rospy.Rate(30)
+            rate = rospy.Rate(10)
             while not self._control_buttons.start \
                   and not rospy.is_shutdown():
-                rospy.loginfo('Waiting for start signal')
+                rospy.loginfo_throttle(0.5, 'Waiting for start signal')
                 rate.sleep()
+            rospy.loginfo('Start signal received')
+        else:
+            rospy.loginfo('Start signal disabled, starting immediately')
