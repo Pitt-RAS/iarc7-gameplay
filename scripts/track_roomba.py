@@ -58,7 +58,7 @@ def track_roomba_land():
     search_start_time = rospy.Time.now()
     rate = rospy.Rate(30)
     roomba_detected = False
-    while True:
+    while not rospy.is_shutdown():
         if rospy.Time.now() - search_start_time > rospy.Duration(3.0):
             rospy.loginfo("Searching for Roomba timed out")
             break

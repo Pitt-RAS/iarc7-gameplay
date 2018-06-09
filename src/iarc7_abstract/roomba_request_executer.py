@@ -162,6 +162,8 @@ class RoombaRequestExecuter(object):
         status_callback(state)
 
         while not rospy.is_shutdown():
+            # rate limit at 10Hz
+            rate = rospy.Rate(10)
             """ determining goals """
             if (state == RoombaRequestExecuterState.RECOVER_FROM_FAILURE
                     or state == RoombaRequestExecuterState.RECOVER_FROM_SUCCESS):
@@ -300,4 +302,6 @@ class RoombaRequestExecuter(object):
                          RoombaRequestExecuterState.FAILED_TASK,
                          RoombaRequestExecuterState.FAILED_TASK_AND_RECOVERY):
                 break
+            rate.sleep()
+
         cls._running = False
