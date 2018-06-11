@@ -39,7 +39,6 @@ def hit_roomba_land():
 
     # change element in array to test diff roombas
     roomba_id = roomba_array.data[5].child_frame_id 
-    roomba_id = roomba_id [0:len(roomba_id)-10]
 
     # test going to the roomba
     goal = QuadMoveGoal(movement_type="go_to_roomba", frame_id=roomba_id)

@@ -1,15 +1,14 @@
 #! /usr/bin/env python
-
 import rospy
 from iarc7_msgs.msg import OdometryArray
 import actionlib
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
-from roomba_request_executer import (RoombaRequestExecuter,
+from iarc7_abstract.roomba_request_executer import (RoombaRequestExecuter,
                                      RoombaRequest,
                                      RoombaRequestExecuterState)
 
-def hit_roomba():
+def test_rre():
     safety_client = SafetyClient('roomba_request_executer_test_abstract')
     # Since this abstract is top level in the control chain there is no need to
     # check for a safety state. We can also get away with not checking for a
@@ -42,16 +41,16 @@ def hit_roomba():
         rospy.sleep(2)
 
     # change element in array to test diff roombas
-    roomba_id = roomba_array.data[5].child_frame_id
+    roomba_id = roomba_array.data[-1].child_frame_id
 
     RoombaRequestExecuter.init('motion_planner_server')
 
-    roomba_request = RoombaRequest(roomba_id, RoombaRequest.HIT, 5)
+    roomba_request = RoombaRequest(roomba_id, RoombaRequest.BUMP, 5)
 
     RoombaRequestExecuter.run(roomba_request, _receive_roomba_executer_status)
 
     while RoombaRequestExecuter.has_running_task():
-        rospy.logwarn(str(executer_state))
+        rospy.logwarn('Current Roomba Request Executer state: ' + executer_state.name)
         rospy.sleep(2)
 
     if executer_state == RoombaRequestExecuterState.SUCCESS:
@@ -66,11 +65,10 @@ def _receive_roomba_status(data):
 def _receive_roomba_executer_status(data):
     global executer_state
     executer_state = data
-    rospy.logerr('state: ' + str(executer_state))
+    rospy.logerr_throttle(60, 'Updated state: ' + executer_state.name)
 
 if __name__ == '__main__':
     executer_state = None
-
     roomba_array = None
     # Initializes a rospy node so that the SimpleActionClient can
     # publish and subscribe over ROS.
@@ -78,5 +76,5 @@ if __name__ == '__main__':
     _roomba_status_sub = rospy.Subscriber('roombas',
                      OdometryArray, _receive_roomba_status)
 
-    hit_roomba()
+    test_rre()
     rospy.spin()
