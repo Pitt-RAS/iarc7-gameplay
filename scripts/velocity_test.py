@@ -24,8 +24,6 @@ def velocity_test():
     client.wait_for_server()
     if rospy.is_shutdown(): return
 
-    rospy.sleep(2.0)
-
     X_VELOCITY = 0.2
     Y_VELOCITY = 0.2
     X_DELAY = 2.0
@@ -41,54 +39,55 @@ def velocity_test():
     if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=X_VELOCITY, y_velocity=0.0, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(X_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Translation 1 canceled")
+    for i in range(0, 1):
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=X_VELOCITY, y_velocity=0.0, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(X_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Translation 1 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(STOP_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Stop 1 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(STOP_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Stop 1 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=-Y_VELOCITY, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(Y_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Translation 2 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=-Y_VELOCITY, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(Y_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Translation 2 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(STOP_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Stop 2 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(STOP_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Stop 2 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=-X_VELOCITY, y_velocity=0.0, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(X_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Translation 3 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=-X_VELOCITY, y_velocity=0.0, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(X_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Translation 3 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(STOP_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Stop 3 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(STOP_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Stop 3 canceled")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=Y_VELOCITY,  z_position=0.8)
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    rospy.sleep(Y_DELAY)
-    client.cancel_goal()
-    rospy.logwarn("Translation 4 canceled")
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=Y_VELOCITY,  z_position=0.8)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(Y_DELAY)
+        client.cancel_goal()
+        rospy.logwarn("Translation 4 canceled")
 
     goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0,  z_position=0.8)
     # Sends the goal to the action server.
