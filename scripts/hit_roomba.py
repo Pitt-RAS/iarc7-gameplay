@@ -68,18 +68,9 @@ def hit_roomba_land():
         # change element in array to test diff roombas
         roomba_id = roomba_array.data[0].child_frame_id
 
-        # test going to the roomba
-        goal = QuadMoveGoal(movement_type="go_to_roomba", frame_id=roomba_id)
-        # Send the goal to the action server
-        client.send_goal(goal)
-        # Waits for the server to finihs performing the action
-        client.wait_for_result()
-        if rospy.is_shutdown(): return
-        rospy.logwarn('Go To Roomba success: {}'.format(client.get_result()))
-
         # Test tracking
         goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id,
-            time_to_track=0.5, x_overshoot=0, y_overshoot=0)
+            time_to_track=3.0, x_overshoot=0, y_overshoot=0)
         # Sends the goal to the action server.
         client.send_goal(goal)
         # Waits for the server to finish performing the action.
