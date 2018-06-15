@@ -24,8 +24,8 @@ def velocity_test():
     client.wait_for_server()
     if rospy.is_shutdown(): return
 
-    X_VELOCITY = 0.2
-    Y_VELOCITY = 0.2
+    X_VELOCITY = 0.5
+    Y_VELOCITY = 0.5
     X_DELAY = 2.0
     Y_DELAY = 2.0
     STOP_DELAY = 2.0

@@ -47,7 +47,7 @@ def track_roomba_land():
     client.cancel_goal()
     rospy.logwarn("Done ascending")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=1.0, y_velocity=0.0, z_position=1.5)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.7, y_velocity=0.0, z_position=1.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
 
@@ -55,7 +55,7 @@ def track_roomba_land():
     rate = rospy.Rate(30)
     roomba_detected = False
     while not rospy.is_shutdown():
-        if rospy.Time.now() - search_start_time > rospy.Duration(3.0):
+        if rospy.Time.now() - search_start_time > rospy.Duration(2.5):
             rospy.loginfo("Searching for Roomba timed out")
             break
         elif len(roomba_array.data) > 0:

@@ -44,7 +44,7 @@ def hit_roomba_land():
     client.cancel_goal()
     rospy.logwarn("Done ascending")
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=1.0, y_velocity=0.0, z_position=1.5)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.7, y_velocity=0.0, z_position=1.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
 
@@ -52,7 +52,7 @@ def hit_roomba_land():
     rate = rospy.Rate(30)
     roomba_detected = False
     while not rospy.is_shutdown():
-        if rospy.Time.now() - search_start_time > rospy.Duration(3.0):
+        if rospy.Time.now() - search_start_time > rospy.Duration(2.5):
             rospy.loginfo("Searching for Roomba timed out")
             break
         elif len(roomba_array.data) > 0:
@@ -68,22 +68,23 @@ def hit_roomba_land():
         # change element in array to test diff roombas
         roomba_id = roomba_array.data[0].child_frame_id
 
-        # Test tracking
-        goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id,
+        for i in range(0, 1):
+            # Test tracking
+            goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id,
             time_to_track=0.0, x_overshoot=0, y_overshoot=0)
-        # Sends the goal to the action server.
-        client.send_goal(goal)
-        # Waits for the server to finish performing the action.
-        client.wait_for_result()
-        rospy.logwarn("Track Roomba success: {}".format(client.get_result()))
+            # Sends the goal to the action server.
+            client.send_goal(goal)
+            # Waits for the server to finish performing the action.
+            client.wait_for_result()
+            rospy.logwarn("Track Roomba success: {}".format(client.get_result()))
 
-         # Test hitting
-        goal = QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id)
-        # Sends the goal to the action server.
-        client.send_goal(goal)
-        # Waits for the server to finish performing the action.
-        client.wait_for_result()
-        rospy.logwarn("Hit Roomba success: {}".format(client.get_result()))
+             # Test hitting
+            goal = QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id)
+            # Sends the goal to the action server.
+            client.send_goal(goal)
+            # Waits for the server to finish performing the action.
+            client.wait_for_result()
+            rospy.logwarn("Hit Roomba success: {}".format(client.get_result()))
 
     else:
         rospy.logerr("Roomba not found while searching, returning")
