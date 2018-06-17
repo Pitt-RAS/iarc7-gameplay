@@ -44,14 +44,10 @@ def track_roomba_land():
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(2.0)
-    
     client.cancel_goal()
     rospy.logwarn("Done ascending")
 
-    # change element in array to test diff roombas
-    roomba_id = roomba_array.data[3].child_frame_id 
-
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=1.0, y_velocity=0.0, z_position=1.5)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.7, y_velocity=0.0, z_position=1.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
 
@@ -59,7 +55,7 @@ def track_roomba_land():
     rate = rospy.Rate(30)
     roomba_detected = False
     while not rospy.is_shutdown():
-        if rospy.Time.now() - search_start_time > rospy.Duration(3.0):
+        if rospy.Time.now() - search_start_time > rospy.Duration(2.5):
             rospy.loginfo("Searching for Roomba timed out")
             break
         elif len(roomba_array.data) > 0:
@@ -73,10 +69,10 @@ def track_roomba_land():
 
     if roomba_detected:
         # change element in array to test diff roombas
-        roomba_id = roomba_array.data[0].child_frame_id 
+        roomba_id = roomba_array.data[0].child_frame_id
 
         # Test tracking
-        goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id, 
+        goal = QuadMoveGoal(movement_type="track_roomba", frame_id=roomba_id,
             time_to_track=6.0, x_overshoot=0.0, y_overshoot=0.0)
         # Sends the goal to the action server.
         client.send_goal(goal)
