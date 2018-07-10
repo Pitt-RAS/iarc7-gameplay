@@ -25,7 +25,7 @@ def takeoff_land():
 
     rospy.sleep(5.0)
 
-    for i in range(0, 2):
+    for i in range(0, 1):
         # Test takeoff
         goal = QuadMoveGoal(movement_type="takeoff")
         # Sends the goal to the action server.
@@ -47,23 +47,40 @@ def takeoff_land():
         for i in range(0, 1):
 
             rospy.logwarn("Ascending")
-            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=1.0)
+            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.7)
             # Sends the goal to the action server.
             client.send_goal(goal)
-            rospy.sleep(3.0)
+            rospy.sleep(5.0)
             client.cancel_goal()
             if rospy.is_shutdown(): return
             rospy.logwarn("Done asending")
 
 
             rospy.logwarn("Descending")
-            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.8)
+            goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.7)
             # Sends the goal to the action server.
             client.send_goal(goal)
-            rospy.sleep(3.0)
+            rospy.sleep(5.0)
             client.cancel_goal()
             if rospy.is_shutdown(): return
             rospy.logwarn("Done descending")
+
+        # Test land
+        goal = QuadMoveGoal(movement_type="land")
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        # cancel land
+        rospy.sleep(1.0)
+        client.cancel_goal()
+        rospy.sleep(3.0)
+
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0, z_position=0.7)
+        # Sends the goal to the action server.
+        client.send_goal(goal)
+        rospy.sleep(5.0)
+        client.cancel_goal()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Done descending")
 
         # Test land
         goal = QuadMoveGoal(movement_type="land")
