@@ -37,7 +37,19 @@ def takeoff_land():
     rospy.sleep(2.0)
 
     # Fly around in square all diagonals when possible.
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=1.0, y_position=1.0, z_position=0.8)
+    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=2.0, y_position=0, z_position=0.75)
+    client.send_goal(goal)
+    client.wait_for_result()
+    if rospy.is_shutdown(): return
+    rospy.logwarn("Waypoint 1 success: {}".format(client.get_result()))
+
+    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=2.0, y_position=3.0, z_position=0.75)
+    client.send_goal(goal)
+    client.wait_for_result()
+    if rospy.is_shutdown(): return
+    rospy.logwarn("Waypoint 1 success: {}".format(client.get_result()))
+
+    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=2.0, y_position=0.0, z_position=0.75)
     client.send_goal(goal)
     client.wait_for_result()
     if rospy.is_shutdown(): return
