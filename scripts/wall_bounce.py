@@ -45,7 +45,7 @@ def wall_bounce():
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
     rospy.sleep(0.5)
 
-    for i in range(0, 10):
+    for i in range(0, 4):
 
         # Go in a direction until the distance to any wall (that was not the last wall hit) is too small
         x_vel = math.cos(angle) * VELOCITY
