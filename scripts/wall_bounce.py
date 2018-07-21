@@ -32,7 +32,7 @@ def wall_bounce():
     VELOCITY = 0.5
     STOP_DELAY = 2.0
     angle = 0
-    distance_to_wall_threshold = 0.25
+    distance_to_wall_threshold = 2.0
     last_wall_hit = -1
 
     # Test takeoff
