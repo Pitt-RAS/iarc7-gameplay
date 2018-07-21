@@ -55,6 +55,7 @@ def wall_bounce():
         goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=x_vel, y_velocity=y_vel, z_position=1.5)
         # Sends the goal to the action server.
         client.send_goal(goal)
+        rospy.sleep(1)
 
         rate = rospy.Rate(30)
         while True:
