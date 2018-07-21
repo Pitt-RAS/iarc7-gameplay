@@ -52,7 +52,7 @@ def wall_bounce():
         y_vel = math.sin(angle) * VELOCITY
         rospy.logwarn('SET A VELOCITY')
         rospy.logwarn('Changing direction, new angle: {} degrees'.format(angle * 180.0 / math.pi))
-        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=x_vel, y_velocity=y_vel, z_position=1.2)
+        goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=x_vel, y_velocity=y_vel, z_position=1.5)
         # Sends the goal to the action server.
         client.send_goal(goal)
 
@@ -91,9 +91,8 @@ def wall_bounce():
             rate.sleep()
 
         client.cancel_goal()
-        rospy.sleep(1.0)
 
-    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0,  z_position=1.2)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=0.0, y_velocity=0.0,  z_position=1.5)
     # Sends the goal to the action server.
     client.send_goal(goal)
     rospy.sleep(STOP_DELAY)
