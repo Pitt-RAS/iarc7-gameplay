@@ -36,33 +36,34 @@ def takeoff_land():
 
     rospy.sleep(2.0)
 
-    Z_HEIGHT = 0.75
+    Z_HEIGHT = 1.5
 
-    # Fly around in square all diagonals when possible.
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=1.5, y_position=0.0, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 1 success: {}".format(client.get_result()))
+    for i in range(100):
+        # Fly around in square all diagonals when possible.
+        goal = QuadMoveGoal(movement_type="xyztranslate", x_position=1.5, y_position=0.0, z_position=Z_HEIGHT)
+        client.send_goal(goal)
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Waypoint 1 success: {}".format(client.get_result()))
 
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=1.5, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 2 success: {}".format(client.get_result()))
+        goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=1.5, z_position=Z_HEIGHT)
+        client.send_goal(goal)
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Waypoint 2 success: {}".format(client.get_result()))
 
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=-1.5, y_position=0.0, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 3 success: {}".format(client.get_result()))
+        goal = QuadMoveGoal(movement_type="xyztranslate", x_position=-1.5, y_position=0.0, z_position=Z_HEIGHT)
+        client.send_goal(goal)
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Waypoint 3 success: {}".format(client.get_result()))
 
-    # Fly around in square all diagonals when possible.
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=-1.5, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 4 success: {}".format(client.get_result()))
+        # Fly around in square all diagonals when possible.
+        goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=-1.5, z_position=Z_HEIGHT)
+        client.send_goal(goal)
+        client.wait_for_result()
+        if rospy.is_shutdown(): return
+        rospy.logwarn("Waypoint 4 success: {}".format(client.get_result()))
 
     # Test land
     goal = QuadMoveGoal(movement_type="land")
