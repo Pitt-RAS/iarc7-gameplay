@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 import sys
 import rospy
-
+from iarc7_msgs.msg import OdometryArray
 import actionlib
+import tf2_ros
 from iarc7_motion.msg import QuadMoveGoal, QuadMoveAction
 from iarc7_safety.SafetyClient import SafetyClient
 
-def takeoff_land():
-    safety_client = SafetyClient('takeoff_translate_land_abstract')
+def velocity_test():
+    safety_client = SafetyClient('test_obstacle_avoidance_abstract')
     # Since this abstract is top level in the control chain there is no need to check
     # for a safety state. We can also get away with not checking for a fatal state since
     # all nodes below will shut down.
@@ -23,7 +24,9 @@ def takeoff_land():
     client.wait_for_server()
     if rospy.is_shutdown(): return
 
-    rospy.sleep(2.0)
+    X_VELOCITY = 0.5
+    Y_VELOCITY = 0.5
+    TRANSLATE_DELAY = 7.0
 
     # Test takeoff
     goal = QuadMoveGoal(movement_type="takeoff")
@@ -34,35 +37,19 @@ def takeoff_land():
     if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
-    rospy.sleep(2.0)
-
-    Z_HEIGHT = 0.75
-
-    # Fly around in square all diagonals when possible.
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=1.5, y_position=0.0, z_position=Z_HEIGHT)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=X_VELOCITY, y_velocity=Y_VELOCITY, z_position=0.8)
+    # Sends the goal to the action server.
     client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 1 success: {}".format(client.get_result()))
+    rospy.sleep(TRANSLATE_DELAY )
+    client.cancel_goal()
+    rospy.logwarn("Translation 1 canceled")
 
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=1.5, z_position=Z_HEIGHT)
+    goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=-X_VELOCITY, y_velocity=-Y_VELOCITY, z_position=0.8)
+    # Sends the goal to the action server.
     client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 2 success: {}".format(client.get_result()))
-
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=-1.5, y_position=0.0, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 3 success: {}".format(client.get_result()))
-
-    # Fly around in square all diagonals when possible.
-    goal = QuadMoveGoal(movement_type="xyztranslate", x_position=0.0, y_position=-1.5, z_position=Z_HEIGHT)
-    client.send_goal(goal)
-    client.wait_for_result()
-    if rospy.is_shutdown(): return
-    rospy.logwarn("Waypoint 4 success: {}".format(client.get_result()))
+    rospy.sleep(TRANSLATE_DELAY )
+    client.cancel_goal()
+    rospy.logwarn("Returned Home")
 
     # Test land
     goal = QuadMoveGoal(movement_type="land")
@@ -74,8 +61,6 @@ def takeoff_land():
     rospy.logwarn("Land success: {}".format(client.get_result()))
 
 if __name__ == '__main__':
-    # Initializes a rospy node so that the SimpleActionClient can
-    # publish and subscribe over ROS.
-    rospy.init_node('takeoff_land_abstract')
-    takeoff_land()
+    rospy.init_node('test_obstacle_avoidance_abstract')
+    velocity_test()
     rospy.spin()
