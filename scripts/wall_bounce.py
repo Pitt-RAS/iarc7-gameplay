@@ -31,6 +31,7 @@ def wall_bounce():
 
     VELOCITY = 0.5
     STOP_DELAY = 2.0
+    # Start going forward
     angle = 0
     distance_to_wall_threshold = 2.0
     last_wall_hit = -1
@@ -45,7 +46,7 @@ def wall_bounce():
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
     rospy.sleep(0.5)
 
-    for i in range(0, 4):
+    for i in range(0, 100):
 
         # Go in a direction until the distance to any wall (that was not the last wall hit) is too small
         x_vel = math.cos(angle) * VELOCITY
@@ -57,40 +58,37 @@ def wall_bounce():
         client.send_goal(goal)
         rospy.sleep(1)
 
+        CONE_WIDTH_RAD = 30 * math.pi / 180.0
+        CONE_OFFSET_RAD = ((math.pi/2) - CONE_WIDTH_RAD) / 2.0
+
         rate = rospy.Rate(30)
         while True:
-            if last_wall_hit != 0 and arena_position_estimator.distance_to_left() < distance_to_wall_threshold:
+            if (last_wall_hit != 0 or last_wall_hit != 3) and arena_position_estimator.distance_to_left() < distance_to_wall_threshold:
                 last_wall_hit = 0
                 rospy.logerr('LEFT WALL HIT')
-                # random angle 0 to -180 degrees
-                angle = random.random() * -math.pi
-                angle = max(min(angle, -math.pi/4), -math.pi*3/4)
+                # random angle pointed SE
+                angle = -((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD) - (math.pi/2)
                 break
 
-            if last_wall_hit != 1 and arena_position_estimator.distance_to_right() < distance_to_wall_threshold:
+            if (last_wall_hit != 1 or last_wall_hit != 2) and arena_position_estimator.distance_to_right() < distance_to_wall_threshold:
                 last_wall_hit = 1
                 rospy.logerr('RIGHT WALL HIT')
-                # random angle 0 to 180 degrees
-                angle = random.random() * math.pi
-                angle = max(min(angle, math.pi*3/4), math.pi/4)
+                # random angle pointed NW
+                angle = ((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD)
                 break
 
-            if last_wall_hit != 2 and arena_position_estimator.distance_to_top() < distance_to_wall_threshold:
+            if (last_wall_hit != 2 or last_wall_hit != 0) and arena_position_estimator.distance_to_top() < distance_to_wall_threshold:
                 last_wall_hit = 2
                 rospy.logerr('TOP WALL HIT')
-                # Random angle between 90 and 180 or -90 and -180 degrees
-                angle = random.random() * math.pi + math.pi/2
-                angle = max(min(angle, math.pi*5/4), math.pi*3/4)
-                if angle > math.pi:
-                    angle -= 2 * math.pi
+                # random angle pointed SW
+                angle = ((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD) + (math.pi/2)
                 break
 
-            if last_wall_hit != 3 and arena_position_estimator.distance_to_bottom() < distance_to_wall_threshold:
+            if (last_wall_hit != 3 or last_wall_hit != 1) and arena_position_estimator.distance_to_bottom() < distance_to_wall_threshold:
                 last_wall_hit = 3
                 rospy.logerr('BOTTOM WALL HIT')
-                # Random angle between 90 and -90 degrees
-                angle = random.random() * math.pi - math.pi/2
-                angle = max(min(angle, math.pi/4), -math.pi/4)
+                # random angle pointed NE
+                angle = -((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD)
                 break
 
             rate.sleep()
