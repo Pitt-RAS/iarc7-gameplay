@@ -61,6 +61,7 @@ def wall_bounce():
         while True:
             if last_wall_hit != 0 and arena_position_estimator.distance_to_left() < distance_to_wall_threshold:
                 last_wall_hit = 0
+                rospy.logerr('LEFT WALL HIT')
                 # random angle 0 to -180 degrees
                 angle = random.random() * -math.pi
                 angle = max(min(angle, -math.pi/4), -math.pi*3/4)
@@ -68,6 +69,7 @@ def wall_bounce():
 
             if last_wall_hit != 1 and arena_position_estimator.distance_to_right() < distance_to_wall_threshold:
                 last_wall_hit = 1
+                rospy.logerr('RIGHT WALL HIT')
                 # random angle 0 to 180 degrees
                 angle = random.random() * math.pi
                 angle = max(min(angle, math.pi*3/4), math.pi/4)
@@ -75,6 +77,7 @@ def wall_bounce():
 
             if last_wall_hit != 2 and arena_position_estimator.distance_to_top() < distance_to_wall_threshold:
                 last_wall_hit = 2
+                rospy.logerr('TOP WALL HIT')
                 # Random angle between 90 and 180 or -90 and -180 degrees
                 angle = random.random() * math.pi + math.pi/2
                 angle = max(min(angle, math.pi*5/4), math.pi*3/4)
@@ -84,6 +87,7 @@ def wall_bounce():
 
             if last_wall_hit != 3 and arena_position_estimator.distance_to_bottom() < distance_to_wall_threshold:
                 last_wall_hit = 3
+                rospy.logerr('BOTTOM WALL HIT')
                 # Random angle between 90 and -90 degrees
                 angle = random.random() * math.pi - math.pi/2
                 angle = max(min(angle, math.pi/4), -math.pi/4)
