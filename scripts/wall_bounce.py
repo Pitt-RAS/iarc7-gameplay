@@ -56,35 +56,35 @@ def wall_bounce():
         goal = QuadMoveGoal(movement_type="velocity_test", x_velocity=x_vel, y_velocity=y_vel, z_position=1.5)
         # Sends the goal to the action server.
         client.send_goal(goal)
-        rospy.sleep(1)
+        rospy.sleep(0.1)
 
         CONE_WIDTH_RAD = 30 * math.pi / 180.0
         CONE_OFFSET_RAD = ((math.pi/2) - CONE_WIDTH_RAD) / 2.0
 
         rate = rospy.Rate(30)
         while True:
-            if (last_wall_hit != 0 or last_wall_hit != 3) and arena_position_estimator.distance_to_left() < distance_to_wall_threshold:
+            if (last_wall_hit != 0 and last_wall_hit != 3) and arena_position_estimator.distance_to_left() < distance_to_wall_threshold:
                 last_wall_hit = 0
                 rospy.logerr('LEFT WALL HIT')
                 # random angle pointed SE
                 angle = -((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD) - (math.pi/2)
                 break
 
-            if (last_wall_hit != 1 or last_wall_hit != 2) and arena_position_estimator.distance_to_right() < distance_to_wall_threshold:
+            if (last_wall_hit != 1 and last_wall_hit != 2) and arena_position_estimator.distance_to_right() < distance_to_wall_threshold:
                 last_wall_hit = 1
                 rospy.logerr('RIGHT WALL HIT')
                 # random angle pointed NW
                 angle = ((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD)
                 break
 
-            if (last_wall_hit != 2 or last_wall_hit != 0) and arena_position_estimator.distance_to_top() < distance_to_wall_threshold:
+            if (last_wall_hit != 2 and last_wall_hit != 0) and arena_position_estimator.distance_to_top() < distance_to_wall_threshold:
                 last_wall_hit = 2
                 rospy.logerr('TOP WALL HIT')
                 # random angle pointed SW
                 angle = ((random.random() * CONE_WIDTH_RAD) + CONE_OFFSET_RAD) + (math.pi/2)
                 break
 
-            if (last_wall_hit != 3 or last_wall_hit != 1) and arena_position_estimator.distance_to_bottom() < distance_to_wall_threshold:
+            if (last_wall_hit != 3 and last_wall_hit != 1) and arena_position_estimator.distance_to_bottom() < distance_to_wall_threshold:
                 last_wall_hit = 3
                 rospy.logerr('BOTTOM WALL HIT')
                 # random angle pointed NE
