@@ -13,11 +13,12 @@ class ArenaPositionEstimator(object):
         size_y = rospy.get_param('~arena_size_y')
 
         # left, right, top, bottom
-        self.arena_line_positions = [-arena_starting_position_x   + size_y/2,
-                                     arena_starting_position_x    - size_y/2,
-                                     -arena_starting_position_y    + size_x/2,
-                                     arena_starting_position_y   - size_x/2]
+        self.arena_line_positions = [-arena_starting_position_y + size_y/2,
+                                     -(arena_starting_position_y + size_y/2),
+                                     -arena_starting_position_x + size_x/2,
+                                     -(arena_starting_position_x + size_x/2)]
 
+        print 'STARTING LINE POSITIONS', self.arena_line_positions
         self.odom = None
 
         rospy.Subscriber('/floor_detector/boundaries', Boundary, self.boundary_callback)
@@ -42,8 +43,9 @@ class ArenaPositionEstimator(object):
 
     def arena_to_map(self, arena_pos):
         # Arena pos (0,0) is the center of the arena
-        from_left_corner = (arena_pos[0] + 10.0, arena_pos[1] + 10.0)
-        return (self.arena_line_positions[3] + from_left_corner[0], self.arena_line_positions[0] + from_left_corner[1])
+        from_left_corner = (arena_pos[0] + 10.0, -arena_pos[1] + 10.0)
+        # print arena_pos[0], 10.0, self.arena_line_positions[3]
+        return (self.arena_line_positions[3] + from_left_corner[0], self.arena_line_positions[0] - from_left_corner[1])
 
     def distance_to_left(self):
         if self.odom is not None:

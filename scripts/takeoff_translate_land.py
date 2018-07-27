@@ -34,8 +34,6 @@ def takeoff_land():
     if rospy.is_shutdown(): return
     rospy.logwarn("Takeoff success: {}".format(client.get_result()))
 
-    rospy.sleep(2.0)
-
     Z_HEIGHT = 1.5
     TRANSLATION_DISTANCE = 1.5
 
