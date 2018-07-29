@@ -16,24 +16,28 @@ from iarc7_abstract.arena_position_estimator import ArenaPositionEstimator
 
 from tf.transformations import euler_from_quaternion
 
-TRANSLATION_HEIGHT = 1.5
-MIN_GOTO_DISTANCE = 0.5
-USE_PLANNER = True
+TRANSLATION_HEIGHT = 2.0
+MIN_GOTO_DISTANCE = 0.25
+USE_PLANNER = False
 
 TARGET_NUM_ROOMBAS = 2
 MAX_FLIGHT_DURATION = 1 * 60
 
 # Used if the planner is disabled
-TRANSLATION_VELOCITY = 4.0
+TRANSLATION_VELOCITY = 1.0
+
+# SEARCH_POINTS = np.asarray(
+# (
+#     (-6.0,  6.0),   # In a little
+#     (-6.0,  -6.0),  # Right side
+#     (-6.0,  6.0)   # Left side
+# ))
 
 SEARCH_POINTS = np.asarray(
 (
-    ( 0.0,  0.0),   # Center
-    ( 0.0,  7.5),   # Mid left
-    (-7.5,  7.5),   # Bottom left
-    (-7.5, -7.5),   # Bottom right
-    ( 0.0, -7.5),   # Mid right
-    ( 7.5,  0.0),   # Top middle
+    (-7.0,  7.0),   # In a little
+    (-7.0,  -2.0),  # Right side
+    (-7.0,  7.0)    # Left side
 ))
 
 def target_roomba_law(roombas, odom):
@@ -41,21 +45,25 @@ def target_roomba_law(roombas, odom):
     sorted_roombas = sorted([(roomba_distance(r, odom), r) for r in roombas])
     return sorted_roombas[0][1]
 
-def construct_velocity_goal(arena_pos, quad_odom, height=TRANSLATION_HEIGHT):
+def construct_velocity_goal(arena_pos, supposed_to_be_at, height=TRANSLATION_HEIGHT):
     map_pos = arena_position_estimator.arena_to_map(arena_pos)
-    diff_x = arena_pos[0] - quad_odom.pose.pose.position.x
-    diff_y = arena_pos[1] - quad_odom.pose.pose.position.y
+    supposed_to_be_at = arena_position_estimator.arena_to_map(supposed_to_be_at)
+    diff_x = map_pos[0] - supposed_to_be_at[0]
+    diff_y = map_pos[1] - supposed_to_be_at[1]
+    print arena_pos
+    print map_pos
+    print diff_x, diff_y
     hypot = math.sqrt(diff_x**2 + diff_y**2)
     u_x = diff_x / hypot
     u_y = diff_y / hypot
     v_x = u_x * TRANSLATION_VELOCITY
     v_y = u_y * TRANSLATION_VELOCITY
-    time = rospy.Duration(hypot / TRANSLATION_VELOCITY)
+    rospy.loginfo('Time: {}'.format(hypot / TRANSLATION_VELOCITY))
     return QuadMoveGoal(movement_type="velocity_test",
                         x_velocity=v_x,
                         y_velocity=v_y,
                         z_position=height,
-                        time_velocity=time)
+                        velocity_duration=hypot / TRANSLATION_VELOCITY)
 
 
 def construct_xyz_goal(arena_pos, height=TRANSLATION_HEIGHT):
@@ -104,6 +112,19 @@ def did_task_succeed(client, state=None):
         state = client.get_state()
     return (state == GoalStatus.SUCCEEDED)
 
+def guide_roomba_law(roomba):
+    roomba_heading = roomba_yaw(roomba)
+    rospy.loginfo('Roomba heading: {} degrees'.format(roomba_heading * 180.0/math.pi))
+    if -5 * math.pi / 4 > roomba_heading and roomba_heading <= 1 * math.pi /4:
+        # Block
+        return 1
+    elif 1 * math.pi / 4 > roomba_heading and roomba_heading <= 3 * math.pi / 4:
+        # Hit
+        return 2
+    else:
+        # Do nothing
+        return 0
+
 class Mission7(object):
     def __init__(self):
         self.safety_client = SafetyClient('mission7')
@@ -126,6 +147,8 @@ class Mission7(object):
         self._search_state = 0
         self._roomba_sub = rospy.Subscriber('/roombas', OdometryArray, self.roomba_callback)
         self._odom_sub = rospy.Subscriber('/odometry/filtered/', Odometry, self.odom_callback)
+        self._supposed_to_be_at = (rospy.get_param('~arena_starting_position_x'),
+                                   rospy.get_param('~arena_starting_position_y'))
 
     def roomba_callback(self, data):
         self._avail_roombas = data.data
@@ -138,7 +161,8 @@ class Mission7(object):
             map_pos = construct_xyz_goal(arena_pos, height=height)
             self._client.send_goal(map_pos)
         else:
-            self._client.send_goal(construct_velocity_goal(arena_pos, self._odom, height=height))
+            self._client.send_goal(construct_velocity_goal(arena_pos, self._supposed_to_be_at, height=height))
+            self._supposed_to_be_at = arena_pos
 
     def basic_goal(self, goal):
         self._client.send_goal(QuadMoveGoal(movement_type=goal))
@@ -152,10 +176,10 @@ class Mission7(object):
                 return (False, None)
             elif did_task_succeed(self._client):
                 return (True, None)
-            if self._avail_roombas is not None and len(self._avail_roombas) > 0:
-                target_roomba = target_roomba_law(self._avail_roombas, self._odom)
-                if target_roomba is not None:
-                    return (True, target_roomba)
+            #if self._avail_roombas is not None and len(self._avail_roombas) > 0:
+            #    target_roomba = target_roomba_law(self._avail_roombas, self._odom)
+            #    if target_roomba is not None:
+            #        return (True, target_roomba)
             rate.sleep()
 
     def search_for_roomba(self):
@@ -198,6 +222,9 @@ class Mission7(object):
             if track_state == 0:
 
                 # Regardless of the positional action necessary, make sure the last task is canceled
+                if not did_task_finish(self._client):
+                    rospy.loginfo('Canceling goal')
+                    self._client.cancel_goal()
 
                 if d >= MIN_GOTO_DISTANCE:
                     self._client.send_goal(construct_goto_roomba_goal(roomba))
@@ -234,7 +261,36 @@ class Mission7(object):
                     rospy.loginfo('Track roomba kicked back')
                     track_state = 0
                 else:
-                    roomba_heading = roomba_yaw(roomba)
+                    action = guide_roomba_law(roomba)
+                    # If block
+                    if action == 1:
+                        self._client.cancel_goal()
+                        rospy.loginfo('SENDING BLOCK ROOMBA')
+                        self._client.send_goal(QuadMoveGoal(movement_type="block_roomba", frame_id = roomba_id))
+                        track_state = 3
+                    # If hit
+                    elif action == 2:
+                        self._client.cancel_goal()
+                        rospy.loginfo('SENDING HIT ROOMBA')
+                        self._client.send_goal(QuadMoveGoal(movement_type="block_roomba", frame_id = roomba_id))
+                        track_state = 4
+
+            if track_state == 3:
+                if did_task_fail(self._client):
+                    rospy.loginfo('BLOCK FAILED')
+                    track_state = 2
+                if did_task_succeed(self._client):
+                    rospy.loginfo('BLOCK SUCCEEDED')
+                    track_state = 2
+
+            if track_state == 4:
+                if did_task_fail(self._client):
+                    rospy.loginfo('HIT FAILED')
+                    track_state = 2
+                if did_task_succeed(self._client):
+                    rospy.loginfo('HIT SUCCEEDED')
+                    track_state = 2
+
 
             rate.sleep()
 
@@ -249,8 +305,8 @@ class Mission7(object):
         gotten_roombas = 0
         while not mission7_completed:
             roomba = self.search_for_roomba()
-
-            got_roomba = self.track_roomba_to_completion(roomba)
+            break
+            #got_roomba = self.track_roomba_to_completion(roomba)
             if got_roomba:
                 gotten_roombas += 1
 
