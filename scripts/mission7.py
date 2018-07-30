@@ -25,45 +25,55 @@ MAX_FLIGHT_DURATION = 1 * 60
 
 # Used if the planner is disabled
 TRANSLATION_VELOCITY = 1.0
-
-# SEARCH_POINTS = np.asarray(
-# (
-#     (-6.0,  6.0),   # In a little
-#     (-6.0,  -6.0),  # Right side
-#     (-6.0,  6.0)   # Left side
-# ))
+PAUSE_TIME = 1.5
 
 SEARCH_POINTS = np.asarray(
 (
-    (-7.0,  7.0),   # In a little
-    (-7.0,  -2.0),  # Right side
-    (-7.0,  7.0)    # Left side
+    (-4.0,  6.0),   # In a little
+    (-100.0, -100.0), # Pause
+    (-4.0,  -4.0),  # Right side
+    (-100.0, -100.0), # Pause
+    (-4.0,  4.0)    # Left side
 ))
+
+# SEARCH_POINTS = np.asarray(
+# (
+#     (-7.0,  7.0),   # In a little
+#     (-7.0,  -2.0),  # Right side
+#     (-7.0,  7.0)    # Left side
+# ))
 
 def target_roomba_law(roombas, odom):
     # Sort roombas by their distance to the drone
     sorted_roombas = sorted([(roomba_distance(r, odom), r) for r in roombas])
     return sorted_roombas[0][1]
 
-def construct_velocity_goal(arena_pos, supposed_to_be_at, height=TRANSLATION_HEIGHT):
+def construct_velocity_goal(arena_pos, odom, height=TRANSLATION_HEIGHT):
     map_pos = arena_position_estimator.arena_to_map(arena_pos)
-    supposed_to_be_at = arena_position_estimator.arena_to_map(supposed_to_be_at)
-    diff_x = map_pos[0] - supposed_to_be_at[0]
-    diff_y = map_pos[1] - supposed_to_be_at[1]
-    print arena_pos
-    print map_pos
-    print diff_x, diff_y
-    hypot = math.sqrt(diff_x**2 + diff_y**2)
-    u_x = diff_x / hypot
-    u_y = diff_y / hypot
-    v_x = u_x * TRANSLATION_VELOCITY
-    v_y = u_y * TRANSLATION_VELOCITY
-    rospy.loginfo('Time: {}'.format(hypot / TRANSLATION_VELOCITY))
+    #supposed_to_be_at = arena_position_estimator.arena_to_map(supposed_to_be_at)
+    if arena_pos[0] == -100.0 and arena_pos[1] == -100.0:
+        v_x = 0.0
+        v_y = 0.0
+        length_of_time = PAUSE_TIME
+    else:
+        supposed_to_be_at = (odom.pose.pose.position.x, odom.pose.pose.position.y)
+        diff_x = map_pos[0] - supposed_to_be_at[0]
+        diff_y = map_pos[1] - supposed_to_be_at[1]
+        print arena_pos
+        print map_pos
+        print diff_x, diff_y
+        hypot = math.sqrt(diff_x**2 + diff_y**2)
+        u_x = diff_x / hypot
+        u_y = diff_y / hypot
+        v_x = u_x * TRANSLATION_VELOCITY
+        v_y = u_y * TRANSLATION_VELOCITY
+        length_of_time = hypot / TRANSLATION_VELOCITY
+
     return QuadMoveGoal(movement_type="velocity_test",
                         x_velocity=v_x,
                         y_velocity=v_y,
                         z_position=height,
-                        velocity_duration=hypot / TRANSLATION_VELOCITY)
+                        velocity_duration=length_of_time)
 
 
 def construct_xyz_goal(arena_pos, height=TRANSLATION_HEIGHT):
@@ -161,7 +171,7 @@ class Mission7(object):
             map_pos = construct_xyz_goal(arena_pos, height=height)
             self._client.send_goal(map_pos)
         else:
-            self._client.send_goal(construct_velocity_goal(arena_pos, self._supposed_to_be_at, height=height))
+            self._client.send_goal(construct_velocity_goal(arena_pos, self._odom, height=height))
             self._supposed_to_be_at = arena_pos
 
     def basic_goal(self, goal):
@@ -199,6 +209,9 @@ class Mission7(object):
                 self._search_state = self._search_state + 1 if self._search_state + 1 < SEARCH_POINTS.shape[0] else 1
             else:
                 break
+            rospy.loginfo('Flight time {}'.format((rospy.Time.now() - self.flight_start_time).to_sec()))
+            if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
+                return None
 
         # Todo better initial search position
         self._search_state = 1
@@ -297,7 +310,7 @@ class Mission7(object):
     def attempt_mission7(self):
         # Takeoff
 
-        flight_start_time = rospy.Time.now()
+        self.flight_start_time = rospy.Time.now()
 
         self.basic_goal('takeoff')
 
@@ -305,15 +318,15 @@ class Mission7(object):
         gotten_roombas = 0
         while not mission7_completed:
             roomba = self.search_for_roomba()
-            break
+
             #got_roomba = self.track_roomba_to_completion(roomba)
-            if got_roomba:
-                gotten_roombas += 1
+            #if got_roomba:
+            #    gotten_roombas += 1
 
-            if gotten_roombas > TARGET_NUM_ROOMBAS:
-                break
+            #if gotten_roombas > TARGET_NUM_ROOMBAS:
+            #    break
 
-            if rospy.Time.now() > flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
+            if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
                 break
 
         # self.goto_safe_landing_spot()
