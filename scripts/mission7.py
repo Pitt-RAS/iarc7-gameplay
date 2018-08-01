@@ -26,7 +26,7 @@ MAX_FLIGHT_DURATION = 1.0 * 60
 
 # Used if the planner is disabled
 TRANSLATION_VELOCITY = 1.0
-PAUSE_TIME = 1.5
+PAUSE_TIME = 1.2
 
 SEARCH_POINTS = np.asarray(
 (
@@ -334,6 +334,7 @@ class Mission7(object):
             if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
                 break
 
+        rate = rospy.Rate(30)
         landing_completed = False
         while not landing_completed:
             # self.goto_safe_landing_spot()
