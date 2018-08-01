@@ -29,7 +29,7 @@ def velocity_test():
     X_DELAY = 5.0
     Y_DELAY = 5.0
     STOP_DELAY = 2.0
-    HEIGHT = 1.5
+    HEIGHT = 1.1
 
     # Test takeoff
     goal = QuadMoveGoal(movement_type="takeoff")

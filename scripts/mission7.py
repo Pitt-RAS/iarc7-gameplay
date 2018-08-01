@@ -17,15 +17,15 @@ from iarc7_abstract.arena_position_estimator import ArenaPositionEstimator
 from tf.transformations import euler_from_quaternion
 from control_button_interpreter import ControlButtonInterpreter
 
-TRANSLATION_HEIGHT = 2.0
+TRANSLATION_HEIGHT = 1.1
 MIN_GOTO_DISTANCE = 0.5
 USE_PLANNER = False
 
 TARGET_NUM_ROOMBAS = 2
-MAX_FLIGHT_DURATION = 1.0 * 60
+MAX_FLIGHT_DURATION = 3.0 * 60
 
 # Used if the planner is disabled
-TRANSLATION_VELOCITY = 1.0
+TRANSLATION_VELOCITY = 0.3
 PAUSE_TIME = 1.2
 
 SEARCH_POINTS = np.asarray(
