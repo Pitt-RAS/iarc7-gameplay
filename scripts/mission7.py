@@ -18,7 +18,7 @@ from tf.transformations import euler_from_quaternion
 from control_button_interpreter import ControlButtonInterpreter
 
 TRANSLATION_HEIGHT = 2.0
-MIN_GOTO_DISTANCE = 0.25
+MIN_GOTO_DISTANCE = 0.5
 USE_PLANNER = False
 
 TARGET_NUM_ROOMBAS = 2
@@ -241,9 +241,10 @@ class Mission7(object):
                     self._client.cancel_goal()
 
                 if d >= MIN_GOTO_DISTANCE:
-                    self._client.send_goal(construct_goto_roomba_goal(roomba))
-                    rospy.loginfo('GOTO ROOMBA')
-                    track_state = 1
+                    #self._client.send_goal(construct_goto_roomba_goal(roomba))
+                    #rospy.loginfo('GOTO ROOMBA')
+                    #track_state = 1
+                    pass
                 else:
                     self._client.send_goal(QuadMoveGoal(movement_type="track_roomba",
                                                         frame_id=roomba_id,
@@ -276,6 +277,7 @@ class Mission7(object):
                     track_state = 0
                 else:
                     action = guide_roomba_law(roomba)
+                    action = 2
                     # If block
                     if action == 1:
                         self._client.cancel_goal()
@@ -286,7 +288,7 @@ class Mission7(object):
                     elif action == 2:
                         self._client.cancel_goal()
                         rospy.loginfo('SENDING HIT ROOMBA')
-                        self._client.send_goal(QuadMoveGoal(movement_type="block_roomba", frame_id = roomba_id))
+                        self._client.send_goal(QuadMoveGoal(movement_type="hit_roomba", frame_id = roomba_id))
                         track_state = 4
 
             if track_state == 3:
@@ -304,9 +306,10 @@ class Mission7(object):
                 if did_task_succeed(self._client):
                     rospy.loginfo('HIT SUCCEEDED')
                     track_state = 2
-
+                    break
 
             rate.sleep()
+            return True
 
     def attempt_mission7(self):
 
@@ -324,12 +327,12 @@ class Mission7(object):
         while not mission7_completed:
             roomba = self.search_for_roomba()
 
-            #got_roomba = self.track_roomba_to_completion(roomba)
-            #if got_roomba:
-            #    gotten_roombas += 1
+            got_roomba = self.track_roomba_to_completion(roomba)
+            if got_roomba:
+               gotten_roombas += 1
 
-            #if gotten_roombas > TARGET_NUM_ROOMBAS:
-            #    break
+            if gotten_roombas > TARGET_NUM_ROOMBAS:
+               break
 
             if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
                 break
