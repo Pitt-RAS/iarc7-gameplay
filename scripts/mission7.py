@@ -32,9 +32,9 @@ SEARCH_POINTS = np.asarray(
 (
     (-5.0,  6.0),   # In a little
     (-100.0, -100.0), # Pause
-    (-5.0,  -4.0),  # Right side
+    (-5.0,  -1.0),  # Right side
     (-100.0, -100.0), # Pause
-    (-5.0,  4.0)    # Left side
+    (-5.0,  5.0)    # Left side
 ))
 
 # SEARCH_POINTS = np.asarray(
@@ -187,10 +187,10 @@ class Mission7(object):
                 return (False, None)
             elif did_task_succeed(self._client):
                 return (True, None)
-            #if self._avail_roombas is not None and len(self._avail_roombas) > 0:
-            #    target_roomba = target_roomba_law(self._avail_roombas, self._odom)
-            #    if target_roomba is not None:
-            #        return (True, target_roomba)
+            if self._avail_roombas is not None and len(self._avail_roombas) > 0:
+               target_roomba = target_roomba_law(self._avail_roombas, self._odom)
+               if target_roomba is not None:
+                   return (True, target_roomba)
             rate.sleep()
 
     def search_for_roomba(self):
@@ -327,15 +327,16 @@ class Mission7(object):
         while not mission7_completed:
             roomba = self.search_for_roomba()
 
-            got_roomba = self.track_roomba_to_completion(roomba)
-            if got_roomba:
-               gotten_roombas += 1
+            if roomba is not None:
+                got_roomba = self.track_roomba_to_completion(roomba)
+                if got_roomba:
+                   gotten_roombas += 1
 
-            if gotten_roombas > TARGET_NUM_ROOMBAS:
-               break
+                if gotten_roombas > TARGET_NUM_ROOMBAS:
+                   break
 
-            if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
-                break
+                if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
+                    break
 
         rate = rospy.Rate(30)
         landing_completed = False
