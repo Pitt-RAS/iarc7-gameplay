@@ -15,13 +15,14 @@ from actionlib_msgs.msg import GoalStatus
 from iarc7_abstract.arena_position_estimator import ArenaPositionEstimator
 
 from tf.transformations import euler_from_quaternion
+from control_button_interpreter import ControlButtonInterpreter
 
 TRANSLATION_HEIGHT = 2.0
 MIN_GOTO_DISTANCE = 0.25
 USE_PLANNER = False
 
 TARGET_NUM_ROOMBAS = 2
-MAX_FLIGHT_DURATION = 1 * 60
+MAX_FLIGHT_DURATION = 1.0 * 60
 
 # Used if the planner is disabled
 TRANSLATION_VELOCITY = 1.0
@@ -29,11 +30,11 @@ PAUSE_TIME = 1.5
 
 SEARCH_POINTS = np.asarray(
 (
-    (-4.0,  6.0),   # In a little
+    (-5.0,  6.0),   # In a little
     (-100.0, -100.0), # Pause
-    (-4.0,  -4.0),  # Right side
+    (-5.0,  -4.0),  # Right side
     (-100.0, -100.0), # Pause
-    (-4.0,  4.0)    # Left side
+    (-5.0,  4.0)    # Left side
 ))
 
 # SEARCH_POINTS = np.asarray(
@@ -308,6 +309,10 @@ class Mission7(object):
             rate.sleep()
 
     def attempt_mission7(self):
+
+
+        control_buttons.wait_for_start()
+
         # Takeoff
 
         self.flight_start_time = rospy.Time.now()
@@ -329,8 +334,17 @@ class Mission7(object):
             if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
                 break
 
-        # self.goto_safe_landing_spot()
-        self.basic_goal('land')
+        landing_completed = False
+        while not landing_completed:
+            # self.goto_safe_landing_spot()
+            self.basic_goal('land')
+            while not did_task_finish(self._client):
+                rate.sleep()
+
+            if did_task_succeed(self._client):
+                landing_completed = True
+
+        rospy.loginfo('LANDING COMPLETED')
 
 if __name__ == '__main__':
     # Initializes a rospy node so that the SimpleActionClient can
@@ -344,6 +358,9 @@ if __name__ == '__main__':
     msg = BoolStamped()
     msg.header.stamp = rospy.Time.now()
     pub.publish(msg)
+
+    control_buttons = ControlButtonInterpreter()
+
     mission7.attempt_mission7()
 
     rospy.spin()
