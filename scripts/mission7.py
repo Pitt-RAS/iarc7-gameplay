@@ -21,11 +21,11 @@ TRANSLATION_HEIGHT = 1.1
 MIN_GOTO_DISTANCE = 0.5
 USE_PLANNER = False
 
-TARGET_NUM_ROOMBAS = 2
-MAX_FLIGHT_DURATION = 3.0 * 60
+TARGET_NUM_ROOMBAS = 4
+MAX_FLIGHT_DURATION = 6.0 * 60
 
 # Used if the planner is disabled
-TRANSLATION_VELOCITY = 0.3
+TRANSLATION_VELOCITY = 0.6
 PAUSE_TIME = 1.2
 
 SEARCH_POINTS = np.asarray(
@@ -208,7 +208,7 @@ class Mission7(object):
 
             if roomba is None:
                 self._search_state = self._search_state + 1 if self._search_state + 1 < SEARCH_POINTS.shape[0] else 1
-            else:
+            elif self._search_state > 0:
                 break
             rospy.loginfo('Flight time {}'.format((rospy.Time.now() - self.flight_start_time).to_sec()))
             if rospy.Time.now() > self.flight_start_time + rospy.Duration(MAX_FLIGHT_DURATION):
@@ -314,7 +314,7 @@ class Mission7(object):
     def attempt_mission7(self):
 
 
-        control_buttons.wait_for_start()
+        #control_buttons.wait_for_start()
 
         # Takeoff
 
