@@ -45,9 +45,30 @@ SEARCH_POINTS = np.asarray(
 # ))
 
 def target_roomba_law(roombas, odom):
-    # Sort roombas by their distance to the drone
-    sorted_roombas = sorted([(roomba_distance(r, odom), r) for r in roombas])
-    return sorted_roombas[0][1]
+    roomba_costs = []
+    for r in roombas:
+        # finds roombas position in the arena frame
+        roomba_arena_pos = arena_position_estimator.map_to_arena((r.pose.pose.position.x, r.pose.pose.position.y))
+
+        # calculates drones distance to roomba
+        drone_to_roomba = roomba_distance(r, odom)
+        # calculates roombas distance to finish line
+        roomba_to_finish = roomba_arena_pos[0]
+        # calculates roombas positional cost
+        roomba_pos_cost = 20*exp((roomba_arena_pos[0]-10)/3) + \
+                          20*exp(-(roomba_arena_pos[1]+10)/3) + \
+                          20*exp((roomba_arena_pos[0]-10)/3)
+
+        # finds our final cost function, 2 is DRONE_VEL and 0.3 is ROOMBA_VEL
+        total_cost = drone_to_roomba/2 + \
+                     roomba_to_finish/0.3 + \
+                     roomba_pos_cost
+        roomba_costs.append(total_cost, r)
+
+    # determines lowest cost roomba
+    roomba_costs = sorted(roomba_costs)
+    return roomba_costs[0][1]
+
 
 def construct_velocity_goal(arena_pos, odom, height=TRANSLATION_HEIGHT):
     map_pos = arena_position_estimator.arena_to_map(arena_pos)

@@ -47,6 +47,12 @@ class ArenaPositionEstimator(object):
         from_left_corner = (arena_pos[0] + self._size_x/2, - arena_pos[1] + self._size_y/2)
         return (self.arena_line_positions[3] + from_left_corner[0], self.arena_line_positions[0] - from_left_corner[1])
 
+    def map_to_arena(self, map_pos):
+        # Get the coordinates of our object with left corner as origin
+        from_left_corner = (map_pos[0] - self.arena_line_positions[3], map_pos[1] - self.arena_line_positions[0])
+        # shift our origin to the arena frame by subtracting 10x and adding 10y
+        return (from_left_corner[0] - 10, from_left_corner[1] + 10)
+
     def distance_to_left(self):
         if self.odom is not None:
             dist = self.arena_line_positions[0] - self.odom.pose.pose.position.y
